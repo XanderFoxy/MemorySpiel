@@ -23,6 +23,13 @@ let matchedImages = [];
 
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
 
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 const IN_ITALIEN_FILES = [
     'InItalien/1.jpg', 'InItalien/2.jpg', 'InItalien/3.jpg', 'InItalien/4.jpg', 
     'InItalien/5.jpg', 'InItalien/6.jpg', 'InItalien/7.jpg', 'InItalien/8.jpg', 
@@ -41,10 +48,10 @@ const THROUGH_THE_YEARS_FILES = [
     'ThroughTheYears/9.jpg', 'ThroughTheYears/10.jpg', 'ThroughTheYears/11.jpg', 'ThroughTheYears/12.jpg'
 ];
 
-const GEMIXT_FILES = [
-    'Gemixt/1.jpg', 'Gemixt/2.jpg', 'Gemixt/3.jpg', 'Gemixt/4.jpg', 
-    'Gemixt/5.jpg', 'Gemixt/6.jpg', 'Gemixt/7.jpg', 'Gemixt/8.jpg', 
-    'Gemixt/9.jpg', 'Gemixt/10.jpg', 'Gemixt/11.jpg', 'Gemixt/12.jpg'
+const ALL_THEME_PATHS = [
+    ...IN_ITALIEN_FILES,
+    ...BABY_FOX_FILES,
+    ...THROUGH_THE_YEARS_FILES
 ];
 
 const gameConfigs = {
@@ -66,7 +73,7 @@ const gameConfigs = {
     'Gemixt': { 
         imageCount: 12, 
         gridColumns: 6,
-        imagePaths: GEMIXT_FILES
+        imagePaths: ALL_THEME_PATHS
     }
 };
 
@@ -104,12 +111,23 @@ function setupGame() {
 
     memoryGrid.style.gridTemplateColumns = `repeat(${currentConfig.gridColumns}, 1fr)`;
 
+    let selectedPaths;
+    
+    if (currentConfig.imagePaths === ALL_THEME_PATHS) {
+        let shuffledAllPaths = [...ALL_THEME_PATHS];
+        shuffleArray(shuffledAllPaths);
+        // Wähle 12 zufällige Pfade aus allen Themen aus
+        selectedPaths = shuffledAllPaths.slice(0, 12);
+    } else {
+        selectedPaths = currentConfig.imagePaths;
+    }
+
     let gameCardValues = []; 
-    currentConfig.imagePaths.forEach(fullPath => {
+    selectedPaths.forEach(fullPath => {
         gameCardValues.push(fullPath, fullPath); 
     });
 
-    gameCardValues.sort(() => Math.random() - 0.5);
+    shuffleArray(gameCardValues);
 
     gameCardValues.forEach(fullPath => { 
         const card = document.createElement('div');
