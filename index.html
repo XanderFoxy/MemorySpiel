@@ -1,1 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stylisches MemorySpiel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <a href="https://xanderfoxy.github.io/AsmaasWunderland" class="back-link">
+        <i class="fas fa-arrow-left"></i> Zurück zu Asmaas Wunderland
+    </a>
+
+    <div class="game-container">
+        
+        <aside class="sidebar">
+            <h2>Themenwahl</h2>
+            <nav>
+                <button class="theme-button" data-theme="InItalien">In Italien</button>
+                <button class="theme-button" data-theme="BabyFox">Baby Fox</button>
+                <button class="theme-button" data-theme="ThroughTheYears">Through The Years</button>
+                <button class="theme-button" data-theme="Gemixt">Gemixt</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>Stylisches MemorySpiel</h1>
+            
+            <div class="stats">
+                <span id="moves">Züge: 0</span>
+                <span id="pairs-found">Gefunden: 0</span>
+            </div>
+
+            <section class="memory-grid"></section>
+
+            <div id="match-success-overlay" class="overlay">
+                <div class="overlay-content">
+                    <h2>Volltreffer!</h2>
+                    <img id="matched-image-preview" src="" alt="Gefundenes Bild">
+                </div>
+            </div>
+
+            <div id="gallery-overlay" class="overlay">
+                <div class="overlay-content">
+                    <h2>Glückwunsch! Deine Galerie</h2>
+                    <div id="gallery-images">
+                    </div>
+                    <button id="close-gallery">Spiel neu starten</button>
+                </div>
+            </div>
+
+            <audio id="sound-match" src="Sounds/Match.mp3" preload="auto"></audio>
+            <audio id="sound-error" src="Sounds/Error.mp3" preload="auto"></audio>
+            <audio id="sound-win" src="Sounds/Win.mp3" preload="auto"></audio>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
