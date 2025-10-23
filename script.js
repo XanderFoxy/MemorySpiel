@@ -8,9 +8,9 @@ const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
 const galleryImagesContainer = document.getElementById('gallery-images'); 
 
-// NEUE DOM-Elemente für Galerie/Favoriten
+// NEUE DOM-Elemente für die permanente Galerie
 const permanentGalleryContainer = document.getElementById('permanent-gallery-container');
-const permanentGallery = document.getElementById('permanent-gallery'); // Der tatsächliche Halter
+const permanentGallery = document.getElementById('permanent-gallery');
 const imageDetailOverlay = document.getElementById('image-detail-overlay');
 const detailImage = document.getElementById('detail-image');
 const closeDetailButton = document.getElementById('close-detail');
@@ -36,9 +36,11 @@ const difficultyConfigs = {
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
+
+// Wichtig: Verwenden Sie den vollständigen Pfad, wenn Sie auf GitHub Pages hosten
 const BASE_URL = 'Bilder/'; 
 
-// --- Datenstrukturen (KORRIGIERT FÜR BABYFOX) ---
+// --- Datenstrukturen (Mit neuen BabyFox-Dateien) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -64,6 +66,7 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
+// Kombination aus neuen manuellen und alten nummerierten Pfaden
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
@@ -72,6 +75,7 @@ const BABYFOX_FILES = [
     'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
     ...generateNumberedPaths('BabyFox', 20)
 ];
+
 
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
@@ -90,15 +94,13 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// --- FAVORITEN UND GALERIE LOGIK (Wieder eingefügt und korrigiert) ---
+// --- FAVORITEN UND GALERIE LOGIK ---
 
 function getFavorites() {
     try {
         const favorites = localStorage.getItem('memoryFavorites');
-        // Filtert Duplikate und leere Einträge
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
     } catch (e) {
-        console.error("Fehler beim Lesen der Favoriten aus localStorage:", e);
         return [];
     }
 }
@@ -107,17 +109,18 @@ function saveFavorites(favorites) {
     try {
         localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
     } catch (e) {
-        console.error("Fehler beim Speichern der Favoriten in localStorage:", e);
+        // Fehlerbehandlung
     }
 }
 
-function createGalleryItem(imageSrc, isFavorite = false) {
+function createGalleryItem(imagePath, isFavorite = false) {
+    const fullSrc = `${BASE_URL}${imagePath}`;
     const item = document.createElement('div');
     item.classList.add('gallery-item');
-    item.dataset.src = imageSrc;
+    item.dataset.path = imagePath; // Speichert den relativen Pfad für Local Storage
     
     const img = document.createElement('img');
-    img.src = imageSrc;
+    img.src = fullSrc;
     img.alt = 'Gefundenes Bild';
     item.appendChild(img);
 
@@ -129,30 +132,29 @@ function createGalleryItem(imageSrc, isFavorite = false) {
 
     icon.addEventListener('click', (e) => {
         e.stopPropagation(); 
-        toggleFavorite(imageSrc, icon);
+        toggleFavorite(imagePath, icon);
     });
     
     item.addEventListener('click', () => {
-        showImageDetail(imageSrc);
+        showImageDetail(fullSrc); // Übergibt den vollen Pfad zur Großansicht
     });
 
     item.appendChild(icon);
     return item;
 }
 
-function toggleFavorite(imageSrc, iconElement) {
+function toggleFavorite(imagePath, iconElement) {
     let favorites = getFavorites();
-    const index = favorites.indexOf(imageSrc);
+    const index = favorites.indexOf(imagePath);
 
     if (index === -1) {
-        favorites.push(imageSrc);
+        favorites.push(imagePath);
         iconElement.classList.add('active');
     } else {
         favorites.splice(index, 1);
         iconElement.classList.remove('active');
     }
     saveFavorites(favorites);
-    // Lade Galerie neu, um die Änderung zu reflektieren (besonders bei "Alle" Ansicht)
     loadPermanentGallery(); 
 }
 
@@ -171,21 +173,21 @@ function loadPermanentGallery() {
     permanentGallery.innerHTML = '';
     const favorites = getFavorites();
     
-    // Anzeigen der Favoriten (falls vorhanden)
     if (favorites.length > 0) {
-        favorites.forEach(src => {
-            permanentGallery.appendChild(createGalleryItem(src, true)); 
+        // Erstellt Galerie-Items NUR aus Favoriten (welche im Local Storage gespeichert sind)
+        favorites.forEach(path => {
+            // path ist hier bereits der relative Pfad (z.B. BabyFox/1.jpg)
+            permanentGallery.appendChild(createGalleryItem(path, true)); 
         });
     } else {
          const message = document.createElement('p');
-         message.textContent = "Deine Favoriten erscheinen hier, sobald du Bilder markierst.";
-         message.style.marginTop = '10px';
+         message.textContent = "Markiere Bilder als Favoriten (❤️), um sie hier dauerhaft zu speichern.";
          message.style.color = 'var(--primary-color)';
          permanentGallery.appendChild(message);
     }
 }
 
-// --- SPIELLOGIK (Mit Galerie-Integration) ---
+// --- SPIELLOGIK ---
 
 // ... (Slider- und Theme-Event-Listener bleiben unverändert) ...
 
@@ -198,11 +200,12 @@ function setupGame() {
     secondCard = null;
     moves = 0;
     pairsFound = 0;
-    matchedImages = []; 
+    matchedImages = []; // Reset der Matched Images für jedes neue Spiel
     
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
+    // ... (Logik zur Auswahl der Karten bleibt gleich) ...
     const MAX_PAIRS = currentDifficulty.pairs; 
     
     statsMoves.textContent = `Züge: ${moves}`;
@@ -228,8 +231,8 @@ function setupGame() {
     }
     
     if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade prüfen!`);
-        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
+        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden.`);
+        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
         return;
     }
 
@@ -243,9 +246,10 @@ function setupGame() {
     gameCardValues.forEach(fullPath => { 
         const card = document.createElement('div');
         card.classList.add('memory-card');
-        card.dataset.path = fullPath; 
-
-        const imageURL = `${BASE_URL}${fullPath}`;
+        card.dataset.path = fullPath; // Der relative Pfad (BabyFox/1.jpg)
+        
+        // BASE_URL wird hier nur zur Pfaderstellung für das Bild verwendet
+        const imageURL = `${BASE_URL}${fullPath}`; 
 
         card.innerHTML = `
             <img class="front-face" src="${imageURL}" alt="Memory Bild">
@@ -258,6 +262,7 @@ function setupGame() {
     
     cards.forEach(card => card.addEventListener('click', flipCard));
 }
+
 
 function flipCard() {
     if (lockBoard) return;
@@ -289,31 +294,28 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Karten bleiben offen (match und flip)
+    // Wichtig: Karten bleiben offen
     firstCard.classList.add('match', 'flip'); 
     secondCard.classList.add('match', 'flip'); 
     
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
-    const matchedImageSrc = firstCard.querySelector('.front-face img').src;
+    // NEU: Verwenden des dataset.path für Local Storage
+    const matchedImagePath = firstCard.dataset.path;
+    const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
     
     showMatchSuccess(matchedImageSrc);
     
-    // Füge das Bild zur Galerie hinzu, nachdem das Overlay weg ist (Simulation der Animation)
+    // Nach dem Volltreffer-Overlay: Bild zur permanenten Galerie hinzufügen
     setTimeout(() => {
-        // Füge das gefundene Bild zur Favoritenliste hinzu, wenn es noch nicht da ist
-        let favorites = getFavorites();
-        if (!favorites.includes(matchedImageSrc)) {
-             // Wichtig: Ich füge es nicht automatisch zu den Favoriten hinzu, 
-             // sondern *zeige* es nur in der Galerie an. Da wir keine 
-             // "aktuelle Spiel"-Galerie mehr haben, verwende ich loadPermanentGallery 
-             // um die Favoriten anzuzeigen.
-        }
+        // Füge das BILD (relativer Pfad) zum Array der gefundenen Bilder des SPIELS hinzu (für das Glückwunsch-Overlay)
+        matchedImages.push(matchedImagePath);
         
+        // Fülle die permanente Galerie (die jetzt nur Favoriten zeigt)
         loadPermanentGallery(); 
-    }, 1500);
-    
+    }, 1500); // Verzögerung von 1.5s nach Volltreffer
+
     resetBoard(); 
     
     if (pairsFound === currentDifficulty.pairs) { 
@@ -349,8 +351,19 @@ function showMatchSuccess(imageSrc) {
 
 function gameOver() {
     soundWin.play();
-    // Zeigt die einfache "Glückwunsch" Overlay (kann entfernt werden, wenn nicht gewünscht)
-    galleryOverlay.classList.add('active'); 
+    galleryImagesContainer.innerHTML = '';
+    
+    // Die Galerie im Glückwunsch-Overlay wird mit allen gefundenen Bildern dieses Spiels gefüllt.
+    matchedImages.forEach(path => {
+        const item = createGalleryItem(path, getFavorites().includes(path));
+        // Entferne den Klick-Handler vom Icon, da wir hier kein Herz brauchen, nur die Ansicht
+        const icon = item.querySelector('.favorite-icon');
+        if(icon) {
+            icon.remove();
+        }
+        galleryImagesContainer.appendChild(item);
+    });
+    galleryOverlay.classList.add('active');
 }
 
 closeGalleryButton.addEventListener('click', () => {
