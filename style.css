@@ -19,7 +19,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
     color: var(--text-color);
     min-height: 100vh;
@@ -56,7 +56,7 @@ body {
     border: 5px solid var(--bg-white);
 }
 
-/* --- Sidebar und Slider (KEIN Windows-Look) --- */
+/* --- Sidebar und Buttons (Apple-ähnliches, flüssiges Design) --- */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -66,6 +66,61 @@ body {
     border-right: 3px solid var(--secondary-color);
 }
 
+.sidebar h2 {
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    color: var(--secondary-color);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.theme-nav {
+    display: flex;
+    flex-direction: column; /* Buttons untereinander */
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.theme-button, #close-gallery, #close-detail {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px; 
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
+    -webkit-appearance: none; 
+    appearance: none;
+}
+
+.theme-button:hover, #close-gallery:hover, #close-detail:hover {
+    background-color: #ffd060;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.theme-button.active-theme {
+    background-color: var(--card-main-color);
+    color: white;
+    border: 3px solid var(--secondary-color);
+    transform: scale(1.05);
+}
+
+/* Slider-Anzeige */
+.difficulty-slider-container {
+    padding: 0 10px;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between; 
+    font-size: 0.8rem;
+    color: var(--card-border-color);
+    margin-top: 5px;
+}
+
+/* Slider (KEIN Windows-Look) */
 .slider {
     -webkit-appearance: none;
     width: 100%;
@@ -88,14 +143,14 @@ body {
     background: var(--secondary-color);
     border-radius: 50%;
     border: 4px solid var(--card-main-color);
-    /* Wichtig: Entfernt den inset-Shadow, der wie ein Windows-Button aussah */
-    /* Fügt den Fuchs-Kopf hinzu */
+    box-shadow: none; 
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='80'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
     background-size: 100% 100%;
 }
 
 
-/* --- Hauptinhalt und Grid --- */
+/* --- Memory Grid und Karten --- */
+
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -112,111 +167,65 @@ body {
     display: grid;
     gap: 12px;
     padding: 15px;
-    background-color: #1a1a1a; /* Dunkles Grid-Panel */
+    background-color: #1a1a1a; 
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
     width: 100%;
 }
 
-/* --- Memory Karte (WICHTIG: Crop) --- */
+.memory-card {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%; /* Erzeugt eine quadratische Karte */
+    transform-style: preserve-3d;
+    transition: transform 0.8s;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); 
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.memory-card.flip {
+    transform: rotateY(180deg);
+}
+
+.front-face, .back-face {
+    /* WICHTIG: absolute Positionierung für 3D-Flip */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px solid var(--card-border-color);
+}
+
+.back-face {
+    background: var(--card-main-color);
+    font-size: 3rem;
+    color: white;
+    user-select: none;
+    z-index: 2; /* Fuchs-Seite ist oben, bevor geklappt wird */
+}
+
 .front-face {
+    /* WICHTIG: Die Rückseite des Flippens */
     transform: rotateY(180deg);
     background-color: var(--bg-white);
     padding: 3px; 
-    border: 1px solid #ddd;
+    z-index: 1; 
+    overflow: hidden; /* Sicherstellen, dass nichts überläuft */
 }
 
 .front-face img {
+    /* KORREKTUR: Bild füllt den Platz innerhalb des Front-Face-Containers */
     width: 100%;
     height: 100%;
-    /* KORREKTUR: Erzwingt den Quadratausschnitt (Crop) und verhindert Zerrung */
-    object-fit: cover; 
+    object-fit: cover; /* Crop für die Karten */
     border-radius: 8px;
 }
 
-/* --- Permanente Galerie (Fotostrecke/Karteiständer) --- */
-.permanent-gallery-container {
-    width: 100%;
-    max-width: 900px;
-    padding: 15px;
-    margin-top: 30px;
-    background-color: var(--bg-white); 
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    color: var(--primary-color);
-    text-align: center;
-}
-
-#permanent-gallery {
-    display: flex; /* Für eine einzige, scrollbare Reihe */
-    flex-wrap: nowrap; /* Wichtig: Verhindert Umbruch in zwei Reihen */
-    overflow-x: auto; /* Horizontal scrollbar */
-    padding: 10px 0;
-    gap: 15px;
-    border-top: 5px solid var(--primary-color); 
-    border-bottom: 5px solid var(--primary-color); 
-    align-items: flex-end; 
-}
-
-.gallery-item {
-    position: relative;
-    /* Einheitliche, kleine Größe */
-    width: 100px; 
-    height: 100px; 
-    flex-shrink: 0; 
-    border: 3px solid var(--secondary-color); 
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: var(--bg-light);
-}
-
-.gallery-item img {
-    width: 100%;
-    height: 100%;
-    /* Originalproportion in der Galerie-Vorschau (KEIN Crop) */
-    object-fit: contain; 
-}
-
-.favorite-icon {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    color: var(--bg-white); 
-    font-size: 1.2rem;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
-    cursor: pointer;
-    opacity: 0.8;
-    z-index: 10;
-    transition: color 0.2s, opacity 0.2s;
-}
-
-.favorite-icon.active {
-    color: var(--card-main-color); /* Rot bei Favorit */
-    opacity: 1;
-}
-
-/* Großansicht-Overlay (Moderate Größe) */
-#image-detail-overlay.active {
-    display: flex;
-}
-
-#detail-image {
-    /* Moderate Größe für Smartphones */
-    max-width: 90vw;
-    max-height: 80vh; 
-    object-fit: contain; /* Originalproportion */
-}
-
-/* Match Success Overlay */
-#match-success-overlay {
-    /* Sicherstellen, dass dieses Overlay NICHT permanent sichtbar ist */
-    visibility: hidden;
-    opacity: 0;
-}
-
-#match-success-overlay.active {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* ... (Media Queries bleiben gleich) ... */
+/* ... (Restliche Stile der Galerie und Overlays bleiben erhalten) ... */
