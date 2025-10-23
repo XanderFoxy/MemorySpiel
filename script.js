@@ -17,7 +17,7 @@ const galleryImagesContainer = document.getElementById('gallery-images');
 const themeButtons = document.querySelectorAll('.theme-button');
 const difficultySlider = document.getElementById('difficulty-slider');
 const difficultyDescription = document.getElementById('difficulty-description');
-const foxHeadSlider = document.getElementById('fox-head-slider'); // NEU
+const foxHeadSlider = document.getElementById('fox-head-slider'); 
 
 // Favoriten (Sidebar)
 const permanentGallerySidebar = document.getElementById('permanent-gallery-sidebar');
@@ -29,17 +29,16 @@ const dailyMatchesGallery = document.getElementById('daily-matches-gallery');
 // Detailansicht
 const imageDetailOverlay = document.getElementById('image-detail-overlay');
 const detailImage = document.getElementById('detail-image');
-// closeDetailButton ist in HTML entfernt, Klick auf Overlay schließt
+
+// History Elemente
+const historyOverlay = document.getElementById('history-overlay');
+const historyList = document.getElementById('history-list');
+const showHistoryBtn = document.getElementById('show-history-btn');
 
 // Audio
 const soundMatch = document.getElementById('sound-match');
 const soundError = document.getElementById('sound-error');
 const soundWin = document.getElementById('sound-win');
-
-// History Elemente
-const historyOverlay = document.getElementById('history-overlay');
-const showHistoryBtn = document.getElementById('show-history-btn');
-// closeHistoryBtn ist in HTML entfernt
 
 // Spielzustand
 let cards = [];
@@ -104,7 +103,104 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt'];
 
-// --- SPIELLOGIK ---
+// --- FAVORITEN & GALERIE LOGIK ---
+
+function getFavorites() {
+    try {
+        const favorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveFavorites(favorites) {
+    try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...new Set(favorites)]));
+    } catch (e) {
+        console.error("Fehler beim Speichern der Favoriten:", e);
+    }
+}
+
+function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
+    const fullSrc = `${BASE_URL}${imagePath}`;
+    const item = document.createElement('div');
+    item.classList.add('gallery-item');
+    item.dataset.path = imagePath; 
+    
+    const img = document.createElement('img');
+    img.src = fullSrc;
+    img.alt = 'Gefundenes Bild';
+    item.appendChild(img);
+
+    if (showHeart) {
+        const icon = document.createElement('span');
+        icon.classList.add('favorite-icon', 'fas', 'fa-heart');
+        if (isFavorite) {
+            icon.classList.add('active');
+        }
+
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            toggleFavorite(imagePath, icon);
+        });
+        item.appendChild(icon);
+    }
+    
+    item.addEventListener('click', () => {
+        showImageDetail(fullSrc); 
+    });
+
+    return item;
+}
+
+function toggleFavorite(imagePath, iconElement) {
+    let favorites = getFavorites();
+    const index = favorites.indexOf(imagePath);
+
+    if (index === -1) {
+        favorites.push(imagePath);
+        iconElement.classList.add('active');
+    } else {
+        favorites.splice(index, 1);
+        iconElement.classList.remove('active');
+    }
+    saveFavorites(favorites);
+    loadPermanentGallery(); 
+}
+
+function loadPermanentGallery() {
+    permanentGallerySidebar.innerHTML = '';
+    const favorites = getFavorites();
+    
+    if (favorites.length === 0) {
+         const message = document.createElement('p');
+         message.classList.add('gallery-info');
+         message.innerHTML = "Herz für Favorit";
+         message.style.color = 'var(--secondary-color)';
+         message.style.fontSize = '0.9em';
+         message.style.padding = '5px 0';
+         permanentGallerySidebar.appendChild(message);
+    } else {
+        favorites.forEach(path => {
+            permanentGallerySidebar.appendChild(createGalleryItem(path, true, true)); 
+        });
+    }
+    
+    dailyMatchesGallery.innerHTML = '';
+    const uniqueMatchedImages = [...new Set(matchedImages)];
+    
+    if (uniqueMatchedImages.length > 0) {
+        dailyMatchesTitle.classList.remove('hidden-by-default');
+        uniqueMatchedImages.forEach(path => {
+            dailyMatchesGallery.appendChild(createGalleryItem(path, false, false));
+        });
+    } else {
+        dailyMatchesTitle.classList.add('hidden-by-default');
+    }
+}
+
+// --- SPIELLOGIK & UX FUNKTIONEN ---
 
 function saveCurrentGame() {
     if (!gameStarted || pairsFound === currentDifficulty.pairs) return; 
@@ -131,7 +227,6 @@ function loadCurrentGame() {
     currentDifficulty = difficultyConfigs[gameState.difficulty];
     difficultySlider.value = gameState.difficulty;
     
-    // Setze Fuchs-Position basierend auf dem geladenen Wert
     updateDifficultyDisplay(false); 
 
     moves = gameState.moves;
@@ -212,7 +307,6 @@ function setupGame(isNewGame = true) {
     }
 
     let shuffledPaths = [...allPaths];
-    // Shufflen und Paare auswählen
     for (let i = shuffledPaths.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledPaths[i], shuffledPaths[j]] = [shuffledPaths[j], shuffledPaths[i]];
@@ -224,7 +318,6 @@ function setupGame(isNewGame = true) {
         gameCardValues.push(fullPath, fullPath); 
     });
     
-    // Final Shuffle Array für die Positionen auf dem Feld
     for (let i = gameCardValues.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [gameCardValues[i], gameCardValues[j]] = [gameCardValues[j], gameCardValues[i]];
@@ -254,7 +347,7 @@ function setupGame(isNewGame = true) {
 }
 
 function flipCard() {
-    // Überprüfung, ob ein Overlay aktiv ist (wichtig für Spiel-Blockierung)
+    // Überprüfung auf aktive Overlays oder Sperre
     if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active')) {
         return;
     }
@@ -286,34 +379,201 @@ function flipCard() {
     isMatch ? disableCards() : unflipCards();
 }
 
+function disableCards() {
+    pairsFound++;
+    statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
+    soundMatch.play();
+    
+    firstCard.classList.add('match'); 
+    secondCard.classList.add('match'); 
+    
+    firstCard.removeEventListener('click', flipCard);
+    secondCard.removeEventListener('click', flipCard);
+    
+    const matchedImagePath = firstCard.dataset.path;
+    const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
+    
+    matchedImages.push(matchedImagePath);
+    
+    showMatchSuccessAndAnimate(matchedImageSrc, matchedImagePath);
+    
+    saveCurrentGame();
+
+    resetBoard(); 
+    
+    if (pairsFound === currentDifficulty.pairs) { 
+        setTimeout(gameOver, 2000); 
+    }
+}
+
+function unflipCards() {
+    lockBoard = true;
+    soundError.play();
+    
+    firstCard.classList.add('error');
+    secondCard.classList.add('error');
+    
+    setTimeout(() => {
+        firstCard.classList.remove('flip', 'error');
+        secondCard.classList.remove('flip', 'error');
+        
+        resetBoard();
+    }, 1500); 
+    saveCurrentGame();
+}
+
+function resetBoard() {
+    [hasFlippedCard, lockBoard] = [false, false];
+    [firstCard, secondCard] = [null, null];
+}
+
+function showMatchSuccessAndAnimate(imageSrc, imagePath) {
+    matchedImagePreview.src = imageSrc;
+    matchSuccessOverlay.classList.add('active');
+    
+    setTimeout(() => {
+        
+        const matchContent = matchSuccessOverlay.querySelector('.overlay-content');
+        const matchRect = matchContent.getBoundingClientRect();
+        const mainContentRect = document.querySelector('.main-content').getBoundingClientRect();
+        
+        animatedThumbnail.src = imageSrc;
+        animatedThumbnail.classList.remove('hidden-by-default');
+        
+        // Startposition (Mitte des Pop-up-Overlays)
+        animatedThumbnail.style.width = `${matchRect.width - 20}px`; 
+        animatedThumbnail.style.height = `${matchRect.height - 20}px`; 
+        animatedThumbnail.style.top = `${matchRect.top - mainContentRect.top + 10}px`; 
+        animatedThumbnail.style.left = `${matchRect.left - mainContentRect.left + 10}px`;
+        animatedThumbnail.style.opacity = 1;
+        animatedThumbnail.style.transition = 'all 0.8s cubic-bezier(0.5, 0.0, 0.5, 1.0)';
+
+        matchSuccessOverlay.classList.remove('active'); 
+        
+        loadPermanentGallery(); 
+        const newTarget = dailyMatchesGallery.querySelector(`[data-path="${imagePath}"]`);
+        
+        if (newTarget) {
+            const targetRect = newTarget.getBoundingClientRect();
+            
+            const targetX = targetRect.left - mainContentRect.left;
+            const targetY = targetRect.top - mainContentRect.top;
+
+            animatedThumbnail.style.width = `${targetRect.width}px`; 
+            animatedThumbnail.style.height = `${targetRect.height}px`; 
+            animatedThumbnail.style.top = `${targetY}px`;
+            animatedThumbnail.style.left = `${targetX}px`;
+            animatedThumbnail.style.opacity = 0.8; 
+
+            setTimeout(() => {
+                animatedThumbnail.classList.add('hidden-by-default');
+                animatedThumbnail.style.transition = 'none'; 
+            }, 800);
+        } else {
+             animatedThumbnail.classList.add('hidden-by-default');
+        }
+
+    }, 800); 
+}
+
+function gameOver() {
+    soundWin.play();
+    
+    galleryWinTitle.classList.remove('hidden-by-default');
+    
+    galleryImagesContainer.innerHTML = '';
+    const uniqueMatchedImages = [...new Set(matchedImages)];
+    const favorites = getFavorites();
+    
+    uniqueMatchedImages.forEach(path => {
+         galleryImagesContainer.appendChild(
+             createGalleryItem(path, favorites.includes(path), true)
+         );
+    });
+    
+    updateHistory(currentTheme, uniqueMatchedImages.length === currentDifficulty.pairs);
+
+    galleryOverlay.classList.add('active');
+    localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
+    gameStarted = false;
+}
+
 function showImageDetail(fullSrc) {
     detailImage.src = fullSrc;
     imageDetailOverlay.classList.add('active');
 }
 
-// --- NEU: SLIDER FUCHS LOGIK ---
-function updateDifficultyDisplay(animate = true) {
-    const min = difficultySlider.min;
-    const max = difficultySlider.max;
-    const val = difficultySlider.value;
+// History-Logik
+function updateHistory(theme, completed) {
+    let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+    const today = new Date().toISOString().split('T')[0];
     
-    // Position des Fuchses relativ zum Slider-Wert (0% bis 100%)
+    let dailyEntry = history.find(entry => entry.date === today);
+    if (!dailyEntry) {
+        dailyEntry = { date: today, themes: {} };
+        history.push(dailyEntry);
+    }
+    
+    dailyEntry.themes[theme] = { completed: completed, timestamp: Date.now() };
+
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function showHistory() {
+    const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+    historyList.innerHTML = '';
+
+    if (history.length === 0) {
+        historyList.innerHTML = '<p style="color:var(--secondary-color);">Noch keine Spiele im Verlauf gespeichert.</p>';
+    }
+
+    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    history.forEach(dayEntry => {
+        const dayHeader = document.createElement('h3');
+        dayHeader.textContent = `Datum: ${dayEntry.date}`;
+        dayHeader.style.marginTop = '15px';
+        dayHeader.style.color = 'var(--secondary-color)';
+        historyList.appendChild(dayHeader);
+
+        const themeList = document.createElement('ul');
+        themeList.style.listStyleType = 'none';
+
+        for (const theme in dayEntry.themes) {
+            const themeItem = document.createElement('li');
+            const status = dayEntry.themes[theme].completed ? '✅ Komplett' : '❌ Unvollständig';
+            themeItem.innerHTML = `<strong>${theme}:</strong> ${status}`;
+            themeList.appendChild(themeItem);
+        }
+        historyList.appendChild(themeList);
+    });
+
+    historyOverlay.classList.add('active');
+}
+
+// --- SLIDER FUCHS LOGIK ---
+function updateDifficultyDisplay(animate = true) {
+    const min = parseFloat(difficultySlider.min);
+    const max = parseFloat(difficultySlider.max);
+    const val = parseFloat(difficultySlider.value);
+    
+    // Position des Fuchses relativ zum Slider-Wert
     const percentage = (val - min) / (max - min) * 100;
     
-    // Anpassen an die Breite des Thumb-Griffs (ca. 10px nach links verschoben)
+    // Korrektur für die Breite des Thumb-Griffs (Schätzung: 25px Breite des Thumbs)
+    const thumbCorrection = (percentage / 100) * 25; 
     const offset = 10; 
-    foxHeadSlider.style.left = `calc(${percentage}% - ${offset}px)`;
     
-    // Text-Update
+    // Positionierung, damit der Fuchs mittig über dem Thumb steht
+    foxHeadSlider.style.left = `calc(${percentage}% - ${offset}px + ${thumbCorrection / 2}px)`;
+    
     currentDifficulty = difficultyConfigs[val];
     difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
 
     if (animate) {
-         // Kurzes Aufblenden, wenn der Slider bewegt wird
          foxHeadSlider.style.opacity = 1;
          setTimeout(() => { foxHeadSlider.style.opacity = 0; }, 1000);
     } else {
-         // Beim Laden initial auf 0 setzen
          foxHeadSlider.style.opacity = 0;
     }
 }
@@ -321,19 +581,17 @@ function updateDifficultyDisplay(animate = true) {
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Initiales Laden
     if (!loadCurrentGame()) {
-        updateDifficultyDisplay(false); // Initialer Zustand
+        updateDifficultyDisplay(false); 
         setupGame(true); 
     }
-
+    
     // Event Listener für Schwierigkeits-Slider
     difficultySlider.addEventListener('input', (e) => {
         updateDifficultyDisplay(true);
     });
     
     difficultySlider.addEventListener('change', () => {
-         // Erst wenn der Slider losgelassen wird, wird das neue Spiel gestartet
          setupGame(true); 
     });
     
@@ -341,20 +599,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Detailansicht
     imageDetailOverlay.addEventListener('click', (e) => {
-        // Schließen bei Klick außerhalb des Detail-Bildes
-        if (e.target.id === 'image-detail-overlay' || e.target.id === 'detail-image') {
+        if (e.target.id === 'image-detail-overlay' || e.target.id === 'detail-content' || e.target.id === 'detail-image') {
             imageDetailOverlay.classList.remove('active');
         }
     });
 
     // History-Overlay
     historyOverlay.addEventListener('click', (e) => {
-        if (e.target.id === 'history-overlay') {
+        // Schließt bei Klick auf den Hintergrund
+        if (e.target.id === 'history-overlay' || e.target.classList.contains('overlay-content')) {
             historyOverlay.classList.remove('active');
         }
     });
 
-    // End-Galerie Button ist nun "Neues Spiel"
+    // End-Galerie Button
     closeGalleryButton.addEventListener('click', () => {
         galleryOverlay.classList.remove('active');
         setupGame(true);
@@ -363,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // History anzeigen
     showHistoryBtn.addEventListener('click', showHistory);
     
-    // Theme-Wechsel-Logik (unverändert)
+    // Theme-Wechsel-Logik
     themeButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const newTheme = e.target.dataset.theme;
@@ -384,5 +642,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-
-// ... (Restliche Logik wie disableCards, unflipCards, resetBoard, loadPermanentGallery, updateHistory, showHistory, createGalleryItem bleibt wie im letzten vollständigen Prompt. Sie wurde hier für die Kürze des Updates weggelassen, aber in der realen Datei beibehalten.)
