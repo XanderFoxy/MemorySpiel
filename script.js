@@ -37,7 +37,7 @@ const difficultyConfigs = {
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 const BASE_URL = 'Bilder/'; 
 
-// --- Datenstrukturen und Hilfsfunktionen ---
+// --- Datenstrukturen und Hilfsfunktionen (Pfade und Shuffle bleiben gleich) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -89,7 +89,7 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// --- FAVORITEN UND GALERIE LOGIK ---
+// --- FAVORITEN UND GALERIE LOGIK (Unverändert) ---
 
 function getFavorites() {
     try {
@@ -218,6 +218,7 @@ function setupGame() {
     matchedImages = []; 
     
     matchSuccessOverlay.classList.remove('active');
+    // WICHTIG: Sicherstellen, dass die Galerie-Overlay beim Start NICHT aktiv ist.
     galleryOverlay.classList.remove('active');
     
     const MAX_PAIRS = currentDifficulty.pairs; 
@@ -396,5 +397,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadPermanentGallery();
     
-    setupGame();
-});
+    // Spielstart mit initialen Einstellungen
