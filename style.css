@@ -1,12 +1,14 @@
 :root {
     --primary-color: #5d54a4; /* Dunkles Lila - Hauptakzent */
     --secondary-color: #f7b731; /* Gelb-Orange - Akzent/Match */
-    --card-main-color: #c43847; /* Rot - Neue Kartenfarbe */
+    --card-main-color: #c43847; /* Rot - Kartenfarbe */
     --card-border-color: #fbe695; /* Hellgelber Rand */
     --text-color: #333;
     --match-color: #38c738; /* Grün */
     --error-color: #ff3838; /* Rot */
+    --bg-dark-main: #2c2c2c; /* NEU: Dunkles Grau für den Hauptbereich */
     --bg-light: #f0f4f8; /* Sehr helles Grau-Blau */
+    --bg-white: #ffffff;
 }
 
 /* --- Globale Stile und Layout --- */
@@ -46,15 +48,16 @@ body {
     display: flex;
     width: 100%;
     max-width: 1250px; 
-    background-color: white;
+    /* Der Hauptcontainer bleibt hell für den Rahmen */
+    background-color: var(--bg-white); 
     border-radius: 20px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
     overflow: hidden;
     margin-top: 50px;
-    border: 5px solid #fff;
+    border: 5px solid var(--bg-white);
 }
 
-/* --- Sidebar und Slider --- */
+/* --- Sidebar und Slider (Bleibt hell, schöner Kontrast) --- */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -110,7 +113,6 @@ body {
     margin-top: 20px;
 }
 
-/* Fuchskopf-Thumb Styling */
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -125,7 +127,6 @@ body {
     background-size: 100% 100%;
 }
 
-/* Themen-Buttons Styling */
 .theme-nav {
     display: flex;
     flex-direction: column;
@@ -159,22 +160,24 @@ body {
     box-shadow: 0 6px 0px rgba(0, 0, 0, 0.2);
 }
 
-/* --- Hauptinhalt und Grid --- */
+/* --- Hauptinhalt und Grid (Dunkler Hintergrund) --- */
 .main-content {
     flex-grow: 1;
     padding: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: var(--bg-dark-main); /* NEU: Dunkler Hauptbereich */
+    color: var(--bg-white); /* Text wird hell, damit man ihn lesen kann */
     overflow-y: auto; 
     overflow-x: hidden;
 }
 
 .game-title {
-    color: var(--primary-color);
+    color: var(--secondary-color); /* Titel wird gelb-orange */
     margin-bottom: 25px;
     font-size: 3rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .stats-box {
@@ -184,21 +187,21 @@ body {
     justify-content: space-around;
     padding: 18px;
     margin-bottom: 30px;
-    background-color: var(--bg-light);
+    background-color: var(--primary-color); /* Stats-Box dunkel */
     border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     font-size: 1.3rem;
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--bg-white); /* Text hell */
 }
 
 .memory-grid {
     display: grid;
     gap: 12px;
     padding: 15px;
-    background-color: var(--bg-light);
+    background-color: #1a1a1a; /* NEU: Sehr dunkles Grid-Panel */
     border-radius: 15px;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
     width: 100%;
 }
 
@@ -207,13 +210,13 @@ body {
     position: relative;
     perspective: 1000px;
     width: 100%; 
-    /* WICHTIG: Erzwingt quadratische Form */
     aspect-ratio: 1 / 1; 
+    padding-top: 0; 
     cursor: pointer;
     transform-style: preserve-3d;
     transition: transform 0.6s;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 .front-face, .back-face {
@@ -228,7 +231,7 @@ body {
 
 .front-face {
     transform: rotateY(180deg);
-    background-color: white;
+    background-color: var(--bg-white);
     padding: 3px; 
     border: 1px solid #ddd;
 }
@@ -236,7 +239,7 @@ body {
 .front-face img {
     width: 100%;
     height: 100%;
-    /* Stellt sicher, dass der Ausschnitt mittig und quadratisch ist */
+    /* WICHTIG: Stellt den Quadratausschnitt aus der Mitte sicher */
     object-fit: cover; 
     border-radius: 8px;
 }
@@ -267,9 +270,11 @@ body {
 }
 
 .memory-card.match {
-    /* Macht Karten unklickbar, Styling kann nach Wunsch angepasst werden */
+    /* Karten bleiben offen und sind leicht dunkler */
     opacity: 0.9;
     cursor: default;
+    /* Optional: leichter Rand-Effekt, um Match zu zeigen */
+    box-shadow: 0 0 15px var(--secondary-color); 
 }
 
 /* --- Overlays und Galerie --- */
@@ -295,7 +300,7 @@ body {
 }
 
 .overlay-content {
-    background-color: white;
+    background-color: var(--bg-white);
     padding: 30px;
     border-radius: 15px;
     text-align: center;
@@ -329,7 +334,6 @@ body {
 }
 
 #gallery-images img {
-    /* Feste, kleine Größe für Galerie-Bilder */
     width: 100px;
     height: 100px;
     object-fit: cover;
@@ -339,7 +343,6 @@ body {
 }
 
 #close-gallery {
-    /* Styling des Buttons */
     background-color: var(--card-main-color);
     color: white;
     border: 3px solid var(--card-border-color);
@@ -390,7 +393,6 @@ body {
         margin: 5px;
     }
     
-    /* Max 4 Spalten auf kleinen Screens, um Überlauf zu vermeiden */
     .memory-grid {
         grid-template-columns: repeat(4, 1fr) !important; 
         max-width: 100% !important; 
