@@ -1,21 +1,24 @@
 :root {
-    /* Optimierte und integrierte Farbvariablen */
-    --primary-color: #5d54a4; /* Dunkles Lila - Hauptakzent */
-    --secondary-color: #f7b731; /* Gelb-Orange - Akzent/Match */
-    --card-main-color: #c43847; /* Rot - Kartenfarbe */
+    /* Altes primäres Farbschema */
+    --primary-color: #5d54a4; /* Dunkles Lila */
+    --secondary-color: #f7b731; /* Gelb-Orange (Golden) */
+    
+    /* Neues Karten-Design */
+    --card-main-color: #c43847; /* Rot */
     --card-border-color: #fbe695; /* Hellgelber Rand */
+    
+    /* Layout-Farben */
     --text-color: #333;
-    --match-color: #38c738; /* Grün */
-    --error-color: #ff3838; /* Rot */
     --bg-dark-main: #2c2c2c; /* Dunkles Grau für den Hauptbereich */
     --bg-light: #f0f4f8; 
     --bg-white: #ffffff;
     
-    /* Variable Kartengröße für flexibles Grid */
-    --card-size: 110px; 
+    /* Zustandsfarben */
+    --match-color: #38c738; /* Grün */
+    --error-color: #ff3838; /* Rot */
 }
 
-/* --- Globale Stile und Layout --- */
+/* --- Globale Stile und Layout (Zurück zum Original-Layout) --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -23,86 +26,82 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #e0eafc, #cfdef3); /* Heller, sanfter Verlauf */
     color: var(--text-color);
     min-height: 100vh;
     padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: flex-start; 
+    align-items: flex-start;
 }
 
 .back-link {
-    /* Beibehalten */
     position: fixed; 
     top: 20px;
     left: 20px;
     text-decoration: none;
     color: var(--primary-color);
     font-size: 1.1rem;
-    padding: 10px 20px;
-    border-radius: 30px;
+    padding: 8px 15px;
+    border-radius: 25px;
     background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, transform 0.2s;
     z-index: 100;
-}
-.back-link:hover {
-    transform: translateY(-2px);
 }
 
 .game-container {
     display: flex;
     width: 100%;
-    max-width: 1250px; 
-    background-color: var(--bg-white); 
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    max-width: 1200px;
+    margin: 50px auto 0;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    margin-top: 50px;
-    border: 5px solid var(--secondary-color); /* Goldener Rahmen für das Spiel */
+    /* Der gewünschte weiße Rahmen um alles herum */
+    border: 5px solid var(--bg-white); 
 }
 
 /* --- Sidebar und Buttons --- */
 .sidebar {
-    width: 280px; /* etwas breiter */
-    background-color: var(--primary-color);
+    width: 250px;
+    background: linear-gradient(to bottom, var(--primary-color) 0%, #4a4387 100%); /* Grün-Lila Spektrum aus dem Original */
     color: white;
     padding: 30px 20px;
     text-align: center;
+    /* Trennlinie zum Hauptbereich (golden) */
     border-right: 3px solid var(--secondary-color);
 }
 
 .sidebar h2 {
-    margin-bottom: 15px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 10px;
     font-size: 1.5rem;
-    color: var(--secondary-color);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .theme-nav {
     display: flex;
-    flex-direction: column; 
-    gap: 12px;
-    margin-top: 20px;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.theme-button, #close-gallery, #close-detail {
-    background-color: var(--bg-white);
+.theme-button {
+    /* Stylischere Buttons, Mix aus alt und neu */
+    background-color: var(--bg-white); 
     color: var(--primary-color);
-    border: 3px solid var(--secondary-color);
+    border: 3px solid var(--secondary-color); 
     padding: 12px 20px;
-    border-radius: 8px;
+    border-radius: 8px; 
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); 
-    -webkit-appearance: none; 
-    appearance: none;
 }
 
-.theme-button:hover, #close-gallery:hover, #close-detail:hover {
+.theme-button:hover {
     background-color: var(--secondary-color); 
     color: var(--primary-color); 
     transform: translateY(-2px);
@@ -110,59 +109,86 @@ body {
 }
 
 .theme-button.active-theme {
-    background-color: var(--card-main-color);
-    color: white;
-    border: 3px solid var(--secondary-color); 
-    transform: scale(1.03);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    border: 3px solid var(--secondary-color);
+    transform: scale(1.05);
 }
 
-/* --- Slider & Stats --- */
+/* Slider-Anzeige */
 .difficulty-slider-container {
     padding: 0 10px;
-    margin-bottom: 20px;
-}
-.slider {
-    /* Style beibehalten */
-}
-.slider::-webkit-slider-thumb {
-    /* Style beibehalten */
-}
-#difficulty-description {
-    color: var(--secondary-color);
-    margin-top: 10px;
-    font-weight: bold;
-    font-size: 1.1rem;
 }
 
+.slider-labels {
+    display: flex;
+    justify-content: space-between; 
+    font-size: 0.8rem;
+    color: var(--card-border-color);
+    margin-top: 5px;
+}
+
+/* Fuchs-Slider-Thumb */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: var(--card-border-color);
+    border-radius: 4px;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+    margin-top: 20px;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 35px; 
+    height: 35px; 
+    cursor: pointer;
+    background: var(--secondary-color);
+    border-radius: 50%;
+    border: 4px solid var(--card-main-color);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='70'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
+    background-size: 100% 100%;
+}
+
+/* --- Hauptbereich und Gitter --- */
 .main-content {
     flex-grow: 1;
-    padding: 40px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Dunkles Grau für den Hauptinhalt */
     background-color: var(--bg-dark-main); 
     color: var(--bg-white); 
-    overflow-y: auto; 
-    overflow-x: hidden;
+}
+
+.game-title {
+    font-family: 'Georgia', serif; /* Eine stilvollere Schrift */
+    color: var(--secondary-color); 
+    margin-bottom: 20px;
+    font-size: 3rem;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .stats-box {
     width: 100%;
-    max-width: 780px; /* Angepasst an das Grid */
+    max-width: 600px;
     display: flex;
     justify-content: space-around;
     padding: 15px;
     margin-bottom: 30px;
-    background-color: #3b3b3b;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    font-size: 1.3rem;
+    background-color: #4a4387;
     color: var(--secondary-color);
-    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 1.2rem;
+    font-weight: bold;
 }
 
-/* --- MEMORY GRID & KARTEN FIX --- */
 .memory-grid {
     display: grid;
     gap: 12px;
@@ -170,14 +196,15 @@ body {
     background-color: #1a1a1a; 
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
-    width: auto; /* WICHTIG: Erlaubt Grid, seine Größe basierend auf Inhalt zu nehmen */
+    width: 100%;
+    max-width: 780px; /* Max. Breite für 18 Paare */
 }
 
+/* --- Karten-Design (Spielkarten-Look) --- */
 .memory-card {
     position: relative;
-    /* Feste Größe basierend auf Variable und Grid-Logik */
-    width: var(--card-size); 
-    height: var(--card-size); 
+    width: 100%;
+    padding-bottom: 100%; 
     transform-style: preserve-3d;
     transition: transform 0.8s;
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); 
@@ -185,7 +212,10 @@ body {
     cursor: pointer;
 }
 
-/* Vorder- und Rückseite */
+.memory-card.flip {
+    transform: rotateY(180deg);
+}
+
 .front-face, .back-face {
     position: absolute;
     top: 0;
@@ -197,55 +227,153 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 4px solid var(--card-border-color); /* Hellgelber dünner Rand */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    /* Spielkarten-Rand */
+    border: 4px solid var(--card-border-color); 
 }
 
 .back-face {
-    background: var(--card-main-color); /* Rot */
-    font-size: 4rem; /* Fuchs-Emoji Größe */
-    color: var(--card-border-color); /* Fuchs-Emoji Farbe */
+    /* Rot mit Fuchs-Emoji */
+    background: var(--card-main-color);
+    font-size: 3rem;
+    color: white;
     user-select: none;
+    z-index: 2; 
 }
 
 .front-face {
     transform: rotateY(180deg);
     background-color: var(--bg-white);
     padding: 3px; 
+    z-index: 1; 
     overflow: hidden; 
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
+    /* Wichtig: object-fit: cover sorgt für den Ausschnitt aus der Mitte */
     object-fit: cover; 
-    border-radius: 5px;
+    border-radius: 8px;
 }
 
-/* Match/Error */
 .memory-card.match {
+    pointer-events: none;
     border: 3px solid var(--match-color);
     animation: pulseMatch 0.5s;
-    box-shadow: 0 0 15px var(--match-color);
 }
+
 .memory-card.error {
     border: 3px solid var(--error-color);
     animation: shakeError 0.5s;
 }
 
-/* --- Overlays & Galerie --- */
-/* (Galerie und Overlay-Styles sind gut aus den aktuellen Dateien übernommen und bleiben) */
+/* --- Galerien und Overlays --- */
 
-/* Match Success Overlay Anpassung */
+.permanent-gallery-container {
+    /* Übernahme des Stils der neuen Datei */
+    width: 100%;
+    max-width: 900px;
+    padding: 15px;
+    margin-top: 30px;
+    background-color: var(--bg-white); 
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    color: var(--primary-color);
+    text-align: center;
+}
+
+#permanent-gallery {
+    display: flex; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+    padding: 10px 0;
+    gap: 15px;
+    border-top: 5px solid var(--primary-color); 
+    border-bottom: 5px solid var(--primary-color); 
+    align-items: flex-end; 
+}
+
+.gallery-item {
+    position: relative;
+    width: 100px; 
+    height: 100px; 
+    flex-shrink: 0; 
+    border: 3px solid var(--secondary-color); 
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: var(--bg-light);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    /* Wichtig: object-fit: contain sorgt für proportionale Anzeige (kein Cropping) */
+    object-fit: contain; 
+}
+
+/* Overlays (sichtbar bei .active) */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none; /* Wichtig: Startet unsichtbar */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.overlay.active {
+    display: flex;
+}
+
+/* Speziell für das Match Success Overlay */
 #match-success-overlay {
-    /* Wichtig: Muss flex sein, damit der Inhalt zentriert wird */
-    display: flex !important; 
+    /* Soll als Modal in der Mitte erscheinen, nicht den ganzen Screen blockieren */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0s 0.3s;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    height: auto;
+    background: transparent;
+    z-index: 500;
+    /* Muss von der allgemeinen .overlay Regel überschrieben werden */
+    display: flex; 
+}
+
+#match-success-overlay.active {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s;
 }
 
 #match-success-overlay .overlay-content {
-    /* Kontrast-Design für Volltreffer */
     background-color: var(--bg-dark-main);
     color: var(--secondary-color);
     padding: 20px 40px;
     border: 5px solid var(--secondary-color);
+}
+
+/* ... Restliche Overlay-Styles wie in der neuen Datei ... */
+
+#gallery-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+#gallery-images .gallery-item {
+    width: 120px;
+    height: 120px;
 }
