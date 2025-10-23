@@ -144,26 +144,27 @@ body {
 
 .memory-grid {
     display: grid;
-    /* Feste Größe für 4x6 (24 Karten) Grid */
+    /* STANDARD: 6 Spalten für größere Bildschirme */
     grid-template-columns: repeat(6, 1fr); 
     gap: 15px; /* Größerer Abstand zwischen den Karten */
     padding: 15px;
     background-color: #e9ecef;
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 900px; /* Passt zur 6-Spalten-Struktur */
+    max-width: 900px; 
 }
 
 .memory-card {
     position: relative;
     perspective: 1000px;
-    width: 120px; /* Karten leicht vergrößert */
+    /* STANDARDFALL: 120px */
+    width: 120px; 
     height: 120px;
     cursor: pointer;
     transform-style: preserve-3d;
     transition: transform 0.6s, box-shadow 0.3s;
     border-radius: 12px;
-    box-shadow: 0 6px 15px var(--shadow-light); /* Schönerer Kartenschatten */
+    box-shadow: 0 6px 15px var(--shadow-light); 
 }
 
 /* Zustände der Karte */
@@ -203,8 +204,9 @@ body {
 .front-face img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 8px; /* Inneres Bild leicht abgerundet */
+    /* WICHTIG: Sorgt dafür, dass Bilder ohne Verzerrung zentriert ausgeschnitten werden */
+    object-fit: cover; 
+    border-radius: 8px; 
 }
 
 .back-face {
@@ -333,6 +335,8 @@ body {
 }
 
 /* Responsive Design */
+
+/* Für Tablets und mittlere Desktops */
 @media (max-width: 992px) {
     .memory-card {
         width: 100px; 
@@ -340,6 +344,7 @@ body {
     }
 }
 
+/* Für Mobilgeräte */
 @media (max-width: 768px) {
     .game-container {
         flex-direction: column;
@@ -360,7 +365,7 @@ body {
     }
 
     .theme-button {
-        flex: 1 1 45%; /* Lässt die Buttons zwei pro Reihe sein */
+        flex: 1 1 45%; 
         margin-bottom: 0;
     }
 
@@ -373,17 +378,18 @@ body {
     }
 
     .memory-grid {
-        grid-template-columns: repeat(4, 1fr); /* 4x6 ist zu eng auf kleinen Bildschirmen */
+        /* WICHTIG: Auf 4 Spalten wechseln, damit die Karten auf mobilen Geräten passen */
+        grid-template-columns: repeat(4, 1fr); 
         gap: 10px;
     }
     
     .memory-card {
-        width: 70px; 
-        height: 70px;
+        width: 80px; 
+        height: 80px;
     }
     
     .back-face {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
     
     .back-link {
