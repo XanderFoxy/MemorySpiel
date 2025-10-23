@@ -21,7 +21,7 @@ const soundError = document.getElementById('sound-error');
 const soundWin = document.getElementById('sound-win');
 
 let cards = [];
-let hasFlippedCard = false; // Wird genutzt, um zu prüfen, ob es die erste oder zweite Karte ist
+let hasFlippedCard = false; 
 let lockBoard = false; 
 let firstCard, secondCard; 
 let moves = 0;
@@ -29,15 +29,14 @@ let pairsFound = 0;
 let matchedImages = []; 
 
 const difficultyConfigs = {
-    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, cardSize: '110px' }, // 4x4 Grid
-    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, cardSize: '100px' } // 6x6 Grid
+    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
+    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
 };
 
-// Initialwert: Leicht (1)
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 const BASE_URL = 'Bilder/'; 
 
-// --- Datenstrukturen und Hilfsfunktionen (Pfade und Shuffle) ---
+// --- Datenstrukturen (Kombinierte Pfade) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -48,8 +47,7 @@ function shuffleArray(array) {
 
 function selectRandomImagePaths(allPaths, count) {
     if (allPaths.length < count) {
-        // Falls nicht genug Bilder vorhanden, nimm alle und warne.
-        console.warn(`WARNUNG: Nur ${allPaths.length} Bilder gefunden, obwohl ${count} Paare benötigt.`);
+        // Falls nicht genügend Bilder verfügbar sind, nutze alle und erstelle weniger Paare
         count = allPaths.length;
     }
     let shuffled = [...allPaths];
@@ -65,7 +63,7 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
-// Hier die korrigierten Pfade
+// NEUE BABYFOX-BILDER + alte nummerierte Bilder
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
@@ -92,27 +90,25 @@ const gameConfigs = {
     'Gemixt': { name: 'Gemixt' }
 };
 
-// Standard-Start: Gemixt
-let currentThemeConfig = gameConfigs['Gemixt']; 
+let currentThemeConfig = gameConfigs['Gemixt']; // Standard: Gemixt
 
-// --- FAVORITEN UND GALERIE LOGIK (Beibehalten) ---
+// --- FAVORITEN UND GALERIE LOGIK (Funktioniert, wird übernommen und leicht korrigiert) ---
 
 function getFavorites() {
-    // ... Logik unverändert ...
     try {
         const favorites = localStorage.getItem('memoryFavorites');
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
     } catch (e) {
+        console.error("Fehler beim Laden der Favoriten:", e);
         return [];
     }
 }
 
 function saveFavorites(favorites) {
-    // ... Logik unverändert ...
     try {
         localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
     } catch (e) {
-        // Fehlerbehandlung
+        console.error("Fehler beim Speichern der Favoriten:", e);
     }
 }
 
@@ -188,16 +184,16 @@ function loadPermanentGallery() {
     }
 }
 
-// --- SPIELLOGIK ---
+// --- SPIELLOGIK (Fehlerbehebung und Integration) ---
 
 difficultySlider.addEventListener('input', (e) => {
-    // Aktualisiert die Anzeige des Sliders
     currentDifficulty = difficultyConfigs[e.target.value];
-    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
+    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
+    const pairs = e.target.value === '2' ? 18 : 8;
+    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
 });
 
 difficultySlider.addEventListener('change', () => {
-    // Startet das Spiel neu, wenn der Slider losgelassen wird
     setupGame(); 
 });
 
@@ -225,6 +221,7 @@ function setupGame() {
     pairsFound = 0;
     matchedImages = []; 
     
+    // UI zurücksetzen
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
@@ -233,24 +230,29 @@ function setupGame() {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Grid-Anpassung basierend auf der Schwierigkeit
+    // Grid-Styling anwenden
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
-    // Setzt die Kartengröße für CSS (wichtig für die Darstellung)
-    document.documentElement.style.setProperty('--card-size', currentDifficulty.cardSize); 
+    memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
+
+    let selectedPaths = [];
     
-    let allPaths = [];
     if (currentThemeConfig.name === 'Gemixt') {
-        // Sammle alle Pfade von allen Themen
-        allPaths = IN_ITALIEN_FILES.concat(BABYFOX_FILES, THROUGH_THE_YEARS_FILES);
+        let allPaths = [
+            ...BABYFOX_FILES, 
+            ...THROUGH_THE_YEARS_FILES, 
+            ...IN_ITALIEN_FILES
+        ];
+        selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
+
     } else if (currentThemeConfig.allImagePaths) {
-        allPaths = currentThemeConfig.allImagePaths;
+        selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
     }
     
-    const selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
-
+    // Logik-Check: Prüfen, ob genügend Paare ausgewählt wurden
     if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade überprüfen.`);
-        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
+        const pathCount = selectedPaths.length;
+        console.error(`FEHLER: Nur ${pathCount} einzigartige Bilder gefunden. Benötigt: ${MAX_PAIRS}`);
+        memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${pathCount}/${MAX_PAIRS}) laden. Prüfe die Pfade im Ordner "${currentThemeConfig.name}"!</p>`;
         return;
     }
 
@@ -275,18 +277,18 @@ function setupGame() {
             <span class="back-face">🦊</span>
         `;
         
+        // Füge Event Listener HIER hinzu, nachdem die Karte erstellt wurde
+        card.addEventListener('click', flipCard); 
+        
         memoryGrid.appendChild(card);
         cards.push(card);
     });
     
-    // Event Listener für Karten HIER hinzufügen!
-    cards.forEach(card => card.addEventListener('click', flipCard));
+    // Doppelte Listener-Zuweisung entfernt, sie ist jetzt oben in der Schleife.
 }
 
 
 function flipCard() {
-    // Problem: Das `this` war ein div, aber in der alten Version wurde das `div` als Karte behandelt.
-    // Ich fixiere hier die Logik der Karten-Identifizierung und des Lockings.
     if (lockBoard) return;
     if (this === firstCard) return; 
     if (this.classList.contains('match')) return; 
@@ -294,13 +296,11 @@ function flipCard() {
     this.classList.add('flip');
 
     if (!hasFlippedCard) {
-        // Erste Karte umgedreht
         hasFlippedCard = true;
         firstCard = this;
         return;
     }
     
-    // Zweite Karte umgedreht
     secondCard = this;
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
@@ -318,6 +318,7 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
+    // Die Karten bleiben aufgedeckt (flip-Klasse bleibt)
     firstCard.classList.add('match'); 
     secondCard.classList.add('match'); 
     
@@ -329,11 +330,11 @@ function disableCards() {
     
     showMatchSuccess(matchedImageSrc);
     
-    // Fügt das Bild zur permanenten Galerie hinzu (mit Verzögerung)
     setTimeout(() => {
+        // Fügt das Bild zur permanenten Galerie hinzu (nur den Pfad)
         matchedImages.push(matchedImagePath);
         loadPermanentGallery(); 
-    }, 150); 
+    }, 1500); 
 
     resetBoard(); 
     
@@ -364,7 +365,8 @@ function showMatchSuccess(imageSrc) {
     matchedImagePreview.src = imageSrc;
     matchSuccessOverlay.classList.add('active');
     setTimeout(() => {
-        matchSuccessOverlay.classList.remove('active');
+        // WICHTIG: Die Meldung soll nur kurz aufleuchten.
+        matchSuccessOverlay.classList.remove('active'); 
     }, 1500);
 }
 
@@ -375,13 +377,15 @@ function gameOver() {
     const favorites = getFavorites();
 
     matchedImages.forEach(path => {
+        // Erstellt das Galerie-Item, nun mit korrekter, proportionaler Darstellung
         const item = createGalleryItem(path, favorites.includes(path));
-        // Entferne den Klick-Listener vom Icon in der temporären Galerie
+        
+        // Entfernt den Herz-Icon in der End-Galerie
         const icon = item.querySelector('.favorite-icon');
         if(icon) {
-            icon.removeEventListener('click', icon.onclick);
+            icon.remove();
         }
-        item.removeEventListener('click', item.onclick);
+        // Fügt es zur finalen Galerie hinzu
         galleryImagesContainer.appendChild(item);
     });
     galleryOverlay.classList.add('active');
@@ -394,19 +398,13 @@ closeGalleryButton.addEventListener('click', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Setze die Standardeinstellungen für die Benutzeroberfläche: Leicht & Gemixt
-    const initialDifficulty = difficultyConfigs[difficultySlider.value];
-    difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
+    // Setze initialen Zustand: Leicht (8 Paare) und Gemixt
+    currentDifficulty = difficultyConfigs[difficultySlider.value];
+    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
     
-    const initialThemeButton = document.querySelector('.theme-button[data-theme="Gemixt"]');
-    if (initialThemeButton) {
-        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
-        initialThemeButton.classList.add('active-theme');
-    }
-    currentThemeConfig = gameConfigs['Gemixt'];
-
+    // Aktiviere den 'Gemixt' Button (wird bereits in HTML gesetzt)
+    // currentThemeConfig = gameConfigs['Gemixt']; // Ist schon global so gesetzt
+    
     loadPermanentGallery();
-    
-    // WICHTIG: Spielstart mit initialen Einstellungen
-    setupGame(); 
+    setupGame();
 });
