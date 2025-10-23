@@ -6,6 +6,7 @@ const statsPairsFound = document.getElementById('pairs-found');
 const matchSuccessOverlay = document.getElementById('match-success-overlay');
 const matchedImagePreview = document.getElementById('matched-image-preview');
 const animatedThumbnail = document.getElementById('animated-match-thumbnail');
+const mainContent = document.querySelector('.main-content'); // Referenzrahmen für Animation
 
 // End-Galerie Elemente
 const galleryOverlay = document.getElementById('gallery-overlay');
@@ -51,10 +52,14 @@ let matchedImages = [];
 let currentTheme = 'Gemixt'; 
 let gameStarted = false; 
 
-// Konfigurationen
+// Konfigurationen für 8 Paare und 3 Schwierigkeitsgrade (4x4 Grid)
 const difficultyConfigs = {
-    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
-    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
+    // 1: Leicht - Klassisches Memory (kein Mischen)
+    '1': { name: 'Leicht', description: 'Klassisches Memory. Karten bleiben nach Match an Ort und Stelle.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'classic' }, 
+    // 2: Mittel - Einmaliges Mischen (nach dem ersten Match)
+    '2': { name: 'Mittel', description: 'Nach dem ersten Match werden alle restlichen Karten einmalig neu gemischt.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleOnce' },
+    // 3: Schwer - Ständiges Mischen (nach jedem Zug)
+    '3': { name: 'Schwer', description: 'Nach jedem Zug (unabhängig vom Match) werden alle restlichen Karten neu gemischt.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleAlways' }
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
@@ -205,17 +210,22 @@ function loadPermanentGallery() {
 function saveCurrentGame() {
     if (!gameStarted || pairsFound === currentDifficulty.pairs) return; 
     
+    const cardElements = memoryGrid.querySelectorAll('.memory-card');
+    const cardsState = Array.from(cardElements).map((card, index) => ({
+        path: card.dataset.path,
+        flipped: card.classList.contains('flip'),
+        match: card.classList.contains('match'),
+        position: index 
+    }));
+
     const gameState = {
         theme: currentTheme,
         difficulty: difficultySlider.value,
         moves: moves,
         pairsFound: pairsFound,
         matchedImages: matchedImages,
-        cardsData: cards.map(card => ({ 
-            path: card.dataset.path,
-            flipped: card.classList.contains('flip'),
-            match: card.classList.contains('match')
-        }))
+        cardsData: cardsState,
+        initialShuffleComplete: localStorage.getItem('initialShuffleComplete') === 'true' 
     };
     localStorage.setItem(CURRENT_GAME_STORAGE_KEY, JSON.stringify(gameState));
 }
@@ -233,6 +243,10 @@ function loadCurrentGame() {
     pairsFound = gameState.pairsFound;
     matchedImages = gameState.matchedImages;
     gameStarted = (moves > 0 || pairsFound > 0); 
+    
+    if (currentDifficulty.logic === 'shuffleOnce') {
+        localStorage.setItem('initialShuffleComplete', gameState.initialShuffleComplete ? 'true' : 'false');
+    }
 
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
@@ -242,19 +256,13 @@ function loadCurrentGame() {
     memoryGrid.innerHTML = ''; 
 
     cards = [];
+    
+    // Sortiere nach gespeicherter Position, um die Reihenfolge wiederherzustellen
+    gameState.cardsData.sort((a, b) => a.position - b.position);
+    
     gameState.cardsData.forEach(cardState => {
         const fullPath = cardState.path;
-        const card = document.createElement('div');
-        card.classList.add('memory-card');
-        card.dataset.path = fullPath; 
-        const imageURL = `${BASE_URL}${fullPath}`; 
-        
-        card.innerHTML = `
-            <div class="front-face">
-                <img src="${imageURL}" alt="Memory Bild">
-            </div>
-            <div class="back-face">🦊</div> 
-        `;
+        const card = createCardElement(fullPath);
         
         if (cardState.flipped) { card.classList.add('flip'); }
         if (cardState.match) { card.classList.add('match'); } 
@@ -270,9 +278,41 @@ function loadCurrentGame() {
     return true;
 }
 
+/**
+ * Erzeugt das DOM-Element für eine Karte.
+ * @param {string} fullPath 
+ * @returns {HTMLElement}
+ */
+function createCardElement(fullPath, isMatch = false) {
+    const card = document.createElement('div');
+    card.classList.add('memory-card');
+    card.dataset.path = fullPath; 
+    const imageURL = `${BASE_URL}${fullPath}`; 
+
+    card.innerHTML = `
+        <div class="front-face">
+            <img src="${imageURL}" alt="Memory Bild">
+        </div>
+        <div class="back-face">🦊</div> 
+    `;
+    
+    if (isMatch) {
+        card.classList.add('match', 'flip');
+    } else {
+        card.addEventListener('click', flipCard); 
+    }
+    
+    return card;
+}
+
+/**
+ * Erzeugt die Karten für ein neues Spiel und mischt sie.
+ * @param {boolean} isNewGame 
+ */
 function setupGame(isNewGame = true) {
     if (isNewGame) {
         localStorage.removeItem(CURRENT_GAME_STORAGE_KEY); 
+        localStorage.removeItem('initialShuffleComplete'); 
     }
     
     memoryGrid.innerHTML = '';
@@ -318,27 +358,10 @@ function setupGame(isNewGame = true) {
         gameCardValues.push(fullPath, fullPath); 
     });
     
-    for (let i = gameCardValues.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [gameCardValues[i], gameCardValues[j]] = [gameCardValues[j], gameCardValues[i]];
-    }
+    shuffleCardsArray(gameCardValues);
 
     gameCardValues.forEach(fullPath => { 
-        const card = document.createElement('div');
-        card.classList.add('memory-card');
-        card.dataset.path = fullPath; 
-        
-        const imageURL = `${BASE_URL}${fullPath}`; 
-
-        card.innerHTML = `
-            <div class="front-face">
-                <img src="${imageURL}" alt="Memory Bild">
-            </div>
-            <div class="back-face">🦊</div> 
-        `;
-        
-        card.addEventListener('click', flipCard); 
-        
+        const card = createCardElement(fullPath);
         memoryGrid.appendChild(card);
         cards.push(card);
     });
@@ -346,8 +369,75 @@ function setupGame(isNewGame = true) {
     loadPermanentGallery(); 
 }
 
+/**
+ * Hilfsfunktion zum Mischen eines Arrays.
+ * @param {Array} array 
+ */
+function shuffleCardsArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+/**
+ * Mischt alle NICHT gefundenen Karten neu und ordnet das Grid neu an, wobei gefundene Karten an ihren Plätzen bleiben.
+ */
+function reShuffleRemainingCards() {
+    // Aktuelle Karten im Grid auslesen
+    const currentCards = Array.from(memoryGrid.querySelectorAll('.memory-card'));
+    
+    // Matched-Karten und ihre Positionen (Index)
+    const matchedCardData = currentCards
+        .map((card, index) => ({
+            path: card.dataset.path,
+            index: index,
+            isMatch: card.classList.contains('match')
+        }))
+        .filter(data => data.isMatch);
+        
+    // Pfade der Unmatched-Karten
+    const remainingCards = currentCards.filter(card => !card.classList.contains('match'));
+    let remainingPaths = remainingCards.map(card => card.dataset.path);
+    
+    // Mischen der Pfade
+    shuffleCardsArray(remainingPaths);
+    
+    let finalCardPaths = new Array(currentDifficulty.cardsTotal).fill(null);
+    let remainingPathsIndex = 0;
+
+    // 1. Setze Matched-Karten an ihre Positionen
+    matchedCardData.forEach(data => {
+        finalCardPaths[data.index] = data.path;
+    });
+    
+    // 2. Fülle die leeren Plätze mit den gemischten Pfaden
+    for (let i = 0; i < finalCardPaths.length; i++) {
+        if (finalCardPaths[i] === null) {
+            finalCardPaths[i] = remainingPaths[remainingPathsIndex];
+            remainingPathsIndex++;
+        }
+    }
+    
+    // Neues Grid erstellen
+    memoryGrid.innerHTML = '';
+    cards = [];
+
+    finalCardPaths.forEach((path, index) => {
+        // Prüfe, ob die Karte an dieser Position eine gefundene (Matched-)Karte war
+        const isMatch = matchedCardData.some(d => d.index === index);
+        const card = createCardElement(path, isMatch);
+        if (isMatch) card.classList.add('match', 'flip'); 
+        
+        memoryGrid.appendChild(card);
+        cards.push(card);
+    });
+    
+    // Nach dem Mischen müssen alle Board-Zustände zurückgesetzt werden.
+    resetBoard();
+}
+
 function flipCard() {
-    // Überprüfung auf aktive Overlays oder Sperre
     if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active')) {
         return;
     }
@@ -376,7 +466,20 @@ function flipCard() {
     statsMoves.textContent = `Züge: ${moves}`;
     
     let isMatch = firstCard.dataset.path === secondCard.dataset.path;
-    isMatch ? disableCards() : unflipCards();
+    
+    if (isMatch) {
+        disableCards();
+    } else {
+        unflipCards();
+        
+        // Schwer-Modus: Mische nach fehlerhaftem Zug
+        if (currentDifficulty.logic === 'shuffleAlways') {
+            // Verzögerung, um die Error-Animation zu zeigen.
+            setTimeout(() => {
+                reShuffleRemainingCards();
+            }, 1500);
+        }
+    }
 }
 
 function disableCards() {
@@ -396,6 +499,15 @@ function disableCards() {
     matchedImages.push(matchedImagePath);
     
     showMatchSuccessAndAnimate(matchedImageSrc, matchedImagePath);
+    
+    // Mittel-Modus: Nach dem ERSTEN Match einmal neu mischen
+    if (currentDifficulty.logic === 'shuffleOnce' && localStorage.getItem('initialShuffleComplete') !== 'true' && pairsFound === 1) {
+        localStorage.setItem('initialShuffleComplete', 'true');
+        // Warten, bis die Animation vorbei ist.
+        setTimeout(() => {
+             reShuffleRemainingCards();
+        }, 1500); 
+    }
     
     saveCurrentGame();
 
@@ -419,7 +531,10 @@ function unflipCards() {
         
         resetBoard();
     }, 1500); 
-    saveCurrentGame();
+    
+    if (currentDifficulty.logic !== 'shuffleAlways') {
+        saveCurrentGame();
+    }
 }
 
 function resetBoard() {
@@ -429,18 +544,31 @@ function resetBoard() {
 
 function showMatchSuccessAndAnimate(imageSrc, imagePath) {
     matchedImagePreview.src = imageSrc;
+    
+    // Positioniere das Pop-up mittig im Main-Content
+    const mainContentRect = mainContent.getBoundingClientRect();
+    
+    const popupWidth = Math.min(mainContentRect.width * 0.4, 400);
+    const popupHeight = Math.min(mainContentRect.height * 0.5, 400); 
+    
+    matchSuccessOverlay.style.width = `${popupWidth}px`;
+    matchSuccessOverlay.style.height = `${popupHeight}px`;
+    matchSuccessOverlay.style.top = `${(mainContentRect.height - popupHeight) / 2}px`;
+    matchSuccessOverlay.style.left = `${(mainContentRect.width - popupWidth) / 2}px`;
     matchSuccessOverlay.classList.add('active');
     
+    // Verzögerung für die Pop-up-Anzeige
     setTimeout(() => {
         
-        const matchContent = matchSuccessOverlay.querySelector('.overlay-content');
-        const matchRect = matchContent.getBoundingClientRect();
-        const mainContentRect = document.querySelector('.main-content').getBoundingClientRect();
+        matchSuccessOverlay.classList.remove('active'); 
+        
+        // Starte die Animation
+        const matchRect = matchSuccessOverlay.getBoundingClientRect(); 
         
         animatedThumbnail.src = imageSrc;
         animatedThumbnail.classList.remove('hidden-by-default');
         
-        // Startposition (Mitte des Pop-up-Overlays)
+        // Startposition (Mitte des Pop-up-Overlays, relativ zum Main-Content)
         animatedThumbnail.style.width = `${matchRect.width - 20}px`; 
         animatedThumbnail.style.height = `${matchRect.height - 20}px`; 
         animatedThumbnail.style.top = `${matchRect.top - mainContentRect.top + 10}px`; 
@@ -448,14 +576,15 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
         animatedThumbnail.style.opacity = 1;
         animatedThumbnail.style.transition = 'all 0.8s cubic-bezier(0.5, 0.0, 0.5, 1.0)';
 
-        matchSuccessOverlay.classList.remove('active'); 
         
         loadPermanentGallery(); 
+        
         const newTarget = dailyMatchesGallery.querySelector(`[data-path="${imagePath}"]`);
         
         if (newTarget) {
             const targetRect = newTarget.getBoundingClientRect();
             
+            // Zielkoordinaten relativ zum main-content
             const targetX = targetRect.left - mainContentRect.left;
             const targetY = targetRect.top - mainContentRect.top;
 
@@ -495,6 +624,7 @@ function gameOver() {
 
     galleryOverlay.classList.add('active');
     localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
+    localStorage.removeItem('initialShuffleComplete');
     gameStarted = false;
 }
 
@@ -557,18 +687,15 @@ function updateDifficultyDisplay(animate = true) {
     const max = parseFloat(difficultySlider.max);
     const val = parseFloat(difficultySlider.value);
     
-    // Position des Fuchses relativ zum Slider-Wert
-    const percentage = (val - min) / (max - min) * 100;
-    
-    // Korrektur für die Breite des Thumb-Griffs (Schätzung: 25px Breite des Thumbs)
-    const thumbCorrection = (percentage / 100) * 25; 
+    // Bei 3 Stufen: 1 (0%), 2 (50%), 3 (100%)
+    const correctedPercentage = (val === 1) ? 0 : (val === 2) ? 50 : 100;
+
     const offset = 10; 
-    
-    // Positionierung, damit der Fuchs mittig über dem Thumb steht
-    foxHeadSlider.style.left = `calc(${percentage}% - ${offset}px + ${thumbCorrection / 2}px)`;
+    foxHeadSlider.style.left = `calc(${correctedPercentage}% - ${offset}px)`;
     
     currentDifficulty = difficultyConfigs[val];
-    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
+    // Nur den ersten Satz der Beschreibung anzeigen
+    difficultyDescription.textContent = `${currentDifficulty.name} (8 Paare, ${currentDifficulty.description.split('. ')[0]})`;
 
     if (animate) {
          foxHeadSlider.style.opacity = 1;
@@ -606,8 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // History-Overlay
     historyOverlay.addEventListener('click', (e) => {
-        // Schließt bei Klick auf den Hintergrund
-        if (e.target.id === 'history-overlay' || e.target.classList.contains('overlay-content')) {
+        if (e.target.id === 'history-overlay') {
             historyOverlay.classList.remove('active');
         }
     });
