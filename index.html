@@ -22,12 +22,13 @@
             
             <div class="difficulty-slider-container">
                 <div id="fox-head-slider">🦊</div>
-                <input type="range" min="1" max="2" value="1" id="difficulty-slider" class="slider">
+                <input type="range" min="1" max="3" value="1" id="difficulty-slider" class="slider">
                 <div class="slider-labels">
-                    <span>Leicht (8 Paare)</span>
-                    <span>Schwer (18 Paare)</span>
+                    <span>Leicht</span>
+                    <span>Mittel</span>
+                    <span>Schwer</span>
                 </div>
-                <div id="difficulty-description">Leicht (8 Paare)</div>
+                <div id="difficulty-description">Leicht (8 Paare, Klassisch)</div>
             </div>
             
             <hr>
@@ -70,12 +71,6 @@
             </div>
 
             <section class="memory-grid"></section>
-
-            <div id="daily-matches-container" class="daily-matches-container">
-                 <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel</h2>
-                <div id="daily-matches-gallery" class="daily-matches-gallery">
-                </div>
-            </div>
             
             <div id="match-success-overlay" class="match-success-overlay overlay-modal">
                 <div class="overlay-content">
@@ -85,6 +80,12 @@
             
             <img id="animated-match-thumbnail" src="" alt="Thumbnail Animation" class="hidden-by-default">
 
+            <div id="daily-matches-container" class="daily-matches-container">
+                 <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel</h2>
+                <div id="daily-matches-gallery" class="daily-matches-gallery">
+                </div>
+            </div>
+            
             <div id="history-overlay" class="overlay">
                 <div id="history-content" class="overlay-content detail-content" style="max-width: 800px;">
                     <h2>Dein Spielverlauf</h2>
