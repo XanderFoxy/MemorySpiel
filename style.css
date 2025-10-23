@@ -1,22 +1,22 @@
 :root {
-    /* Originales Farbschema */
+    /* Farben beibehalten, aber dunkleren Hintergrund für Abhebung ändern */
     --primary-color: #5d54a4; /* Dunkles Lila */
     --secondary-color: #f7b731; /* Gelb-Orange (Golden) */
     
-    /* Karten-Design */
+    /* Neues Karten-Design */
     --card-main-color: #c43847; /* Rot */
     --card-border-color: #fbe695; /* Hellgelber Rand */
-    --card-back-color-dark: #8b2832; /* Dunkleres Rot für Schraffur */
     
     /* Layout-Farben */
     --text-color: #333;
-    --bg-dark-main: #2c2c2c; /* Dunkles Grau für den Hauptbereich */
+    --bg-dark-main: #3d344a; /* Dunkles Lila/Grau für Samt-Effekt */
     --bg-light: #f0f4f8; 
     --bg-white: #ffffff;
     
-    /* Zustandsfarben mit erhöhter Signalwirkung (Grüner Glow und Roter Glow) */
-    --match-color: #38c738; 
-    --error-color: #ff3838; 
+    /* Zustandsfarben */
+    --match-color: #38c738; /* Grün */
+    --error-color: #ff3838; /* Rot */
+    --wait-color: #ff9900; /* Orange für erste Karte */
 }
 
 /* --- Globale Stile und Layout --- */
@@ -28,8 +28,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Hintergrundfarbe angepasst, um den weißen Rahmen abzuheben */
-    background: linear-gradient(135deg, #a7bfe8, #6190e8);
+    /* Hintergrund leicht geändert, um weißen Rahmen hervorzuheben */
+    background: linear-gradient(135deg, #d3e1f1, #c1ceda); 
     color: var(--text-color);
     min-height: 100vh;
     padding: 20px;
@@ -39,6 +39,7 @@ body {
 }
 
 .back-link {
+    /* Stil bleibt gleich, ist edel genug */
     position: fixed; 
     top: 20px;
     left: 20px;
@@ -49,7 +50,7 @@ body {
     border-radius: 25px;
     background-color: white;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
     z-index: 100;
 }
 
@@ -58,24 +59,23 @@ body {
     width: 100%;
     max-width: 1200px;
     margin: 50px auto 0;
-    background-color: var(--bg-white);
+    background-color: white;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    /* Weißer Rahmen um den gesamten Container */
+    /* Weißer Rahmen um alles herum */
     border: 5px solid var(--bg-white); 
 }
 
 /* --- Sidebar und Buttons --- */
 .sidebar {
     width: 250px;
-    /* Originaler Farbverlauf: Grün-Lila Spektrum */
-    background: linear-gradient(to bottom, #74519f 0%, #4a4387 100%); 
+    background: linear-gradient(to bottom, var(--primary-color) 0%, #4a4387 100%); 
     color: white;
     padding: 30px 20px;
     text-align: center;
     /* Goldene Trennlinie zum Hauptbereich */
-    border-right: 5px solid var(--secondary-color);
+    border-right: 3px solid var(--secondary-color);
 }
 
 .sidebar h2 {
@@ -83,7 +83,6 @@ body {
     border-bottom: 2px solid var(--secondary-color);
     padding-bottom: 10px;
     font-size: 1.5rem;
-    color: var(--secondary-color);
 }
 
 .theme-nav {
@@ -92,11 +91,11 @@ body {
     gap: 10px;
 }
 
+/* Button-Styling angepasst für Rot/Gelb-Äquivalenz */
 .theme-button {
-    /* Stylischere, leicht abgerundete Buttons (wie gewünscht) */
-    background-color: var(--bg-light); 
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color); 
+    background-color: var(--card-main-color); /* Rot */
+    color: var(--bg-white);
+    border: 3px solid var(--secondary-color); /* Golden */
     padding: 12px 20px;
     border-radius: 8px; 
     font-weight: bold;
@@ -107,31 +106,23 @@ body {
 
 .theme-button:hover {
     background-color: var(--secondary-color); 
-    color: var(--primary-color); 
+    color: var(--card-main-color); 
     transform: translateY(-2px);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
 }
 
 .theme-button.active-theme {
-    /* Aktiver Button in Lila (Hintergrundfarbe) und Gelb (Akzent) */
-    background-color: var(--primary-color);
-    color: var(--secondary-color);
-    border: 2px solid var(--secondary-color);
+    background-color: var(--secondary-color); /* Aktiv: Golden */
+    color: var(--card-main-color); /* Text: Rot */
+    border: 3px solid var(--card-main-color); /* Rand: Rot */
     transform: scale(1.05);
 }
 
-/* Slider (Fuchs-Emoji-Thumb) */
-.slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 8px;
-    background: var(--card-border-color);
-    border-radius: 4px;
-    outline: none;
-    opacity: 0.9;
-    transition: opacity .2s;
-    margin-top: 20px;
+.score-container {
+    padding: 10px 0;
 }
+
+/* Slider-Styling (Fuchs-Slider ist OK, nur die Thumb-Größe für Emojis */
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -141,11 +132,10 @@ body {
     background: var(--secondary-color);
     border-radius: 50%;
     border: 4px solid var(--card-main-color);
-    /* Fuchs-Emoji über Data-URL */
+    /* Fuchs-Emoji als Hintergrund */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='70'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
     background-size: 100% 100%;
 }
-
 
 /* --- Hauptbereich und Gitter --- */
 .main-content {
@@ -154,30 +144,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--bg-dark-main); 
+    /* Samt-artiger, dunkler Hintergrund */
+    background: var(--bg-dark-main); 
     color: var(--bg-white); 
-}
-
-.game-title {
-    color: var(--secondary-color); 
-    margin-bottom: 20px;
-    font-size: 3rem;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-}
-
-.stats-box {
-    width: 100%;
-    max-width: 600px;
-    display: flex;
-    justify-content: space-around;
-    padding: 15px;
-    margin-bottom: 30px;
-    background-color: #4a4387;
-    color: var(--secondary-color);
-    border-radius: 10px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    font-size: 1.2rem;
-    font-weight: bold;
+    /* Samt-Effekt (feine Innenbeleuchtung) */
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1); 
 }
 
 .memory-grid {
@@ -188,23 +159,21 @@ body {
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
     width: 100%;
-    /* Max-Breite wird per JS gesetzt */
+    max-width: 780px; 
+    /* Vermeidet Verschiebung beim Aufdecken */
+    min-height: 300px; 
 }
 
-/* --- Karten-Design (Spielkarten-Look mit Schraffur) --- */
+/* --- Karten-Design --- */
 .memory-card {
     position: relative;
     width: 100%;
     padding-bottom: 100%; 
     transform-style: preserve-3d;
-    transition: transform 0.8s, box-shadow 0.2s; /* Box-Shadow Transition für Glow */
+    transition: transform 0.8s;
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); 
     border-radius: 10px;
     cursor: pointer;
-}
-
-.memory-card.flip {
-    transform: rotateY(180deg);
 }
 
 .front-face, .back-face {
@@ -222,19 +191,20 @@ body {
 }
 
 .back-face {
-    /* Rot mit Gelb/Roter Schraffur */
-    background-color: var(--card-main-color);
-    background-image: repeating-linear-gradient(
-        -45deg,
-        var(--card-border-color) 0,
-        var(--card-border-color) 2px,
-        var(--card-main-color) 2px,
-        var(--card-main-color) 8px
-    );
+    background: var(--card-main-color);
     font-size: 3rem;
     color: white;
     user-select: none;
     z-index: 2; 
+    
+    /* NEU: Dünne, dezent edle Schraffur */
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.1) 2px,
+      transparent 2px,
+      transparent 5px
+    );
 }
 
 .front-face {
@@ -248,29 +218,53 @@ body {
 .front-face img {
     width: 100%;
     height: 100%;
-    /* Wichtig: object-fit: cover für zentrierten, gekroppten Ausschnitt */
+    /* Wichtig: Ausschnitt aus der Mitte */
     object-fit: cover; 
     border-radius: 8px;
 }
 
-/* ZUSTAND: MATCH (Grüner Glow) */
+/* Zustand: Erste Karte ausgewählt (Warten) */
+.memory-card.waiting {
+    border: 4px solid var(--wait-color) !important;
+    box-shadow: 0 0 15px var(--wait-color);
+}
+
+/* Zustand: Korrekter Treffer */
 .memory-card.match {
     pointer-events: none;
-    border-color: var(--match-color);
-    /* Grüner Schein */
-    box-shadow: 0 0 15px 5px var(--match-color); 
-    animation: pulseMatch 0.5s;
+    /* Grüner Rahmen bleibt nach Treffer */
+    border: 4px solid var(--match-color); 
+    /* Leuchteffekt beim Treffer */
+    animation: pulseMatch 0.5s ease-in-out forwards;
+    box-shadow: 0 0 15px var(--match-color);
 }
 
-/* ZUSTAND: ERROR (Roter Glow) */
+@keyframes pulseMatch {
+    0% { box-shadow: 0 0 0 0 rgba(56, 199, 56, 0.7); }
+    70% { box-shadow: 0 0 20px 5px rgba(56, 199, 56, 0); }
+    100% { box-shadow: 0 0 15px var(--match-color); }
+}
+
+/* Zustand: Fehler */
 .memory-card.error {
-    border-color: var(--error-color);
-    /* Roter Schein (Warnsignal) */
-    box-shadow: 0 0 15px 5px var(--error-color); 
-    animation: shakeError 0.5s;
+    border: 4px solid var(--error-color);
+    /* Pulsierende Warnung für Fehler */
+    animation: shakeError 0.5s, pulseError 0.5s ease-in-out;
 }
 
-/* --- Permanente Galerie (Kartenaufsteller) --- */
+@keyframes shakeError {
+    0%, 100% { transform: translate(0, 0); }
+    20%, 60% { transform: translate(-5px, 0); }
+    40%, 80% { transform: translate(5px, 0); }
+}
+
+@keyframes pulseError {
+    0% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0.7); }
+    70% { box-shadow: 0 0 20px 5px rgba(255, 56, 56, 0); }
+    100% { box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); } /* Standard Schatten wiederherstellen */
+}
+
+/* --- Galerien und Overlays --- */
 .permanent-gallery-container {
     width: 100%;
     max-width: 900px;
@@ -284,54 +278,119 @@ body {
 }
 
 #permanent-gallery {
+    /* Favoriten-Leiste */
     display: flex; 
     flex-wrap: nowrap; 
     overflow-x: auto; 
     padding: 10px 0;
     gap: 15px;
     border-top: 5px solid var(--primary-color); 
-    border-bottom: 5px solid var(--primary-color); 
     align-items: flex-end; 
+}
+
+.daily-matches-gallery {
+    /* NEU: Aufsteller für gefundene Bilder (Spiel aktuell) */
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 10px 0;
+    gap: 15px;
+    border-bottom: 5px solid var(--primary-color);
+    margin-top: 15px;
 }
 
 .gallery-item {
     position: relative;
+    width: 100px; 
     height: 100px; 
-    /* Breite wird durch Bildproportion bestimmt, Min-Breite für Icons */
-    min-width: 100px; 
     flex-shrink: 0; 
     border: 3px solid var(--secondary-color); 
     border-radius: 5px;
     cursor: pointer;
     background-color: var(--bg-light);
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .gallery-item img {
-    /* Wichtig: Breite und Höhe automatisch für Proportionen */
-    max-height: 94px; /* 100px - 2x3px Border */
-    width: auto;
+    width: 100%;
+    height: 100%;
+    /* Wichtig: Originale Proportionen */
     object-fit: contain; 
 }
 
-/* --- Detailansicht Overlay (Begrenzt auf Spielfeldgröße) --- */
-#image-detail-overlay.active {
+.favorite-icon {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: white; 
+    text-shadow: 0 0 2px black;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.favorite-icon.active {
+    color: var(--card-main-color); /* Rot, wenn Favorit */
+}
+
+/* --- Overlays --- */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.overlay.active {
     display: flex;
 }
 
-#image-detail-overlay .overlay-content {
-    background: rgba(44, 44, 44, 0.95); /* Dunkler, transparenter Hintergrund */
-    padding: 0;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-    max-width: 800px; /* Begrenzt, nicht größer als das Grid-Maximum */
-    max-height: 90vh;
+.overlay-content {
+    background-color: var(--bg-dark-main);
+    color: var(--bg-white);
+    padding: 30px;
+    border-radius: 15px;
+    border: 5px solid var(--secondary-color);
+    text-align: center;
+    max-width: 90%; 
 }
 
-#detail-image {
+/* NEU: Match Success Overlay als Modal im Main-Content-Bereich */
+.match-success-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    height: auto;
+    background: transparent;
+    z-index: 500;
+}
+
+.match-success-overlay .overlay-content {
+    /* Mittelgroße Ansicht, ca. 3 Stapel hoch */
+    max-width: 400px; 
+    max-height: 400px;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.match-success-overlay #matched-image-preview {
     max-width: 100%;
-    max-height: 90vh; 
-    object-fit: contain; /* Proportional und nicht-croppend */
-    border-radius: 10px;
+    max-height: 100%;
+    /* Wichtig: Originale Proportionen, nicht gecroppt */
+    object-fit: contain; 
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* Bild-Detail Overlay (Groß-Ansicht) */
+#image-detail-overlay .overlay-content {
+    /* Soll nicht größer sein als das Spielfeld/Main-Content-Bereich */
+    max-width: 800px; 
+    max-height: 80vh; 
 }
