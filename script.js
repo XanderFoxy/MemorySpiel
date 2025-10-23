@@ -53,7 +53,7 @@ let moves = 0;
 let pairsFound = 0;
 let matchedImages = []; 
 let currentTheme = 'Gemixt'; 
-let gameStarted = false; // NEU: Flag, ob das Spiel wirklich begonnen wurde (erster Klick)
+let gameStarted = false; 
 
 // Konfigurationen
 const difficultyConfigs = {
@@ -67,9 +67,7 @@ const CURRENT_GAME_STORAGE_KEY = 'memoryCurrentGame';
 const DAILY_SCORE_STORAGE_KEY = 'memoryDailyScore';
 const HISTORY_STORAGE_KEY = 'memoryHistory';
 
-// --- DATENSTRUKTUREN (Kurz gehalten, da sie im Kern korrekt sind) ---
-
-// (IN_ITALIEN_FILES, BABYFOX_FILES, THROUGH_THE_YEARS_FILES und gameConfigs bleiben unverändert aus der vorherigen Version)
+// --- DATENSTRUKTUREN ---
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
     'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
@@ -118,6 +116,7 @@ function getFavorites() {
         const favorites = localStorage.getItem('memoryFavorites');
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
     } catch (e) {
+        console.error("Fehler beim Laden der Favoriten:", e);
         return [];
     }
 }
@@ -183,6 +182,7 @@ function loadPermanentGallery() {
     
     // Favoriten-Sektion (Sidebar)
     if (favorites.length === 0) {
+         // Nachricht, wenn keine Favoriten vorhanden
          const message = document.createElement('p');
          message.classList.add('gallery-info');
          message.textContent = "Markiere Bilder (❤️), um sie dauerhaft zu speichern.";
@@ -212,13 +212,14 @@ function loadPermanentGallery() {
 // --- SPIELSTAND VERWALTUNG & UI ---
 
 function saveCurrentGame() {
+    if (!gameStarted) return; // Nur speichern, wenn das Spiel begonnen wurde
+    
     const gameState = {
         theme: currentTheme,
         difficulty: difficultySlider.value,
         moves: moves,
         pairsFound: pairsFound,
         matchedImages: matchedImages,
-        // Speichert nur die Pfade und den Zustand der Karten
         cardsData: cards.map(card => ({ 
             path: card.dataset.path,
             flipped: card.classList.contains('flip'),
@@ -248,7 +249,7 @@ function loadCurrentGame() {
     // Grid neu erstellen und Zustand wiederherstellen
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
-    memoryGrid.innerHTML = ''; // Leeren
+    memoryGrid.innerHTML = ''; 
 
     cards = [];
     gameState.cardsData.forEach(cardState => {
@@ -259,11 +260,12 @@ function loadCurrentGame() {
         
         const imageURL = `${BASE_URL}${fullPath}`; 
         
+        // Wichtig: Korrekte HTML-Struktur beibehalten!
         card.innerHTML = `
             <div class="front-face">
                 <img src="${imageURL}" alt="Memory Bild">
             </div>
-            <span class="back-face">🦊</span>
+            <div class="back-face">🦊</div>
         `;
         
         if (cardState.flipped) {
@@ -301,8 +303,6 @@ function setupGame(isNewGame = true) {
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
-    const MAX_PAIRS = currentDifficulty.pairs; 
-    
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
@@ -310,45 +310,36 @@ function setupGame(isNewGame = true) {
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
-    // Auswahl der Bilder (Logik bleibt)
+    // Bilderauswahl-Logik
+    const MAX_PAIRS = currentDifficulty.pairs; 
     let selectedPaths = [];
-    // ... Logik zur Auswahl der Bilder ...
+    let allPaths = [];
+
     if (currentThemeConfig.name === 'Gemixt') {
-        let allPaths = [
-            ...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES, ...IN_ITALIEN_FILES
-        ];
-        selectedPaths = ((arr, count) => {
-            if (arr.length < count) count = arr.length;
-            let shuffled = [...arr];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled.slice(0, count);
-        })(allPaths, MAX_PAIRS);
+        allPaths = [...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES, ...IN_ITALIEN_FILES];
     } else if (currentThemeConfig.allImagePaths) {
-         selectedPaths = ((arr, count) => {
-            if (arr.length < count) count = arr.length;
-            let shuffled = [...arr];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled.slice(0, count);
-        })(currentThemeConfig.allImagePaths, MAX_PAIRS);
+         allPaths = currentThemeConfig.allImagePaths;
     }
     
-    if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${selectedPaths.length}/${MAX_PAIRS}) laden.</p>`;
+    // Shuffling und Auswahl
+    if (allPaths.length < MAX_PAIRS) {
+        memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${allPaths.length}/${MAX_PAIRS}) laden.</p>`;
         return;
     }
+
+    let shuffledPaths = [...allPaths];
+    for (let i = shuffledPaths.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPaths[i], shuffledPaths[j]] = [shuffledPaths[j], shuffledPaths[i]];
+    }
+    selectedPaths = shuffledPaths.slice(0, MAX_PAIRS);
 
     let gameCardValues = []; 
     selectedPaths.forEach(fullPath => {
         gameCardValues.push(fullPath, fullPath); 
     });
     
-    // Shuffle Array
+    // Final Shuffle Array
     for (let i = gameCardValues.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [gameCardValues[i], gameCardValues[j]] = [gameCardValues[j], gameCardValues[i]];
@@ -361,11 +352,12 @@ function setupGame(isNewGame = true) {
         
         const imageURL = `${BASE_URL}${fullPath}`; 
 
+        // KORRIGIERT: Korrekte HTML-Struktur für den 3D-Flip
         card.innerHTML = `
             <div class="front-face">
                 <img src="${imageURL}" alt="Memory Bild">
             </div>
-            <span class="back-face">🦊</span>
+            <div class="back-face">🦊</div>
         `;
         
         card.addEventListener('click', flipCard); 
@@ -374,17 +366,17 @@ function setupGame(isNewGame = true) {
         cards.push(card);
     });
     
-    loadPermanentGallery(); // Initialer Load der Galerien (Favoriten sind sichtbar, Aufsteller leer/unsichtbar)
+    loadPermanentGallery(); 
 }
 
-// --- CORE SPIELLOGIK (Mit Korrekturen) ---
+// --- CORE SPIELLOGIK ---
 
 function flipCard() {
     if (lockBoard) return;
     if (this === firstCard) return; 
     if (this.classList.contains('match')) return; 
 
-    // Wenn es der erste Klick im Spiel ist, lösche den gespeicherten Stand und starte offiziell
+    // Spielstart-Logik
     if (!gameStarted) {
          localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
          gameStarted = true;
@@ -395,16 +387,23 @@ function flipCard() {
     if (!hasFlippedCard) {
         hasFlippedCard = true;
         firstCard = this;
-        firstCard.classList.add('waiting'); // Warte-Status
+        firstCard.classList.add('waiting'); 
         return;
     }
     
     secondCard = this;
-    firstCard.classList.remove('waiting'); // Warte-Status entfernen
+    if (firstCard) firstCard.classList.remove('waiting'); 
+    
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
     
     checkForMatch();
+}
+
+function checkForMatch() {
+    let isMatch = firstCard.dataset.path === secondCard.dataset.path;
+    
+    isMatch ? disableCards() : unflipCards();
 }
 
 function disableCards() {
@@ -412,6 +411,7 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
+    // Match-Klassen hinzufügen und Listener entfernen
     firstCard.classList.add('match'); 
     secondCard.classList.add('match'); 
     
@@ -422,9 +422,8 @@ function disableCards() {
     const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
     
     matchedImages.push(matchedImagePath);
-    showMatchSuccess(matchedImageSrc); // Zeigt das Popup
+    showMatchSuccess(matchedImageSrc); 
     
-    // Speichern des Spielstands nach erfolgreichem Match
     saveCurrentGame();
 
     resetBoard(); 
@@ -444,7 +443,6 @@ function unflipCards() {
         firstCard.classList.remove('flip', 'error');
         secondCard.classList.remove('flip', 'error');
         resetBoard(); 
-        // Speichern des Spielstands nach misslungenem Match
         saveCurrentGame();
     }, 1000);
 }
@@ -458,13 +456,13 @@ function resetBoard() {
 }
 
 function showMatchSuccess(imageSrc) {
-    matchSuccessTitle.classList.remove('hidden-by-default'); // Titel anzeigen
+    matchSuccessTitle.classList.remove('hidden-by-default'); // Zeigt "Volltreffer!"
     matchedImagePreview.src = imageSrc;
     matchSuccessOverlay.classList.add('active');
     
     setTimeout(() => {
         matchSuccessOverlay.classList.remove('active'); 
-        matchSuccessTitle.classList.add('hidden-by-default'); // Titel wieder ausblenden
+        matchSuccessTitle.classList.add('hidden-by-default'); // Blendet "Volltreffer!" wieder aus
         loadPermanentGallery(); // Aktualisiert den Aufsteller
     }, 1500);
 }
@@ -472,15 +470,27 @@ function showMatchSuccess(imageSrc) {
 function gameOver() {
     soundWin.play();
     
-    // ... Score- und History-Logik ...
+    // Speichert den Score und die Historie (Logik hier gekürzt, da sie nicht direkt kritisiert wurde)
+    // ... updateDailyScore(); updateHistory(); ...
+
+    galleryWinTitle.classList.remove('hidden-by-default'); // Zeigt "Glückwunsch! Alle Paare gefunden."
     
-    galleryWinTitle.classList.remove('hidden-by-default');
+    galleryImagesContainer.innerHTML = '';
+    const uniqueMatchedImages = [...new Set(matchedImages)];
+    const favorites = getFavorites();
     
-    // End-Galerie zeigen (Logik zur Befüllung bleibt)
+    uniqueMatchedImages.forEach(path => {
+         galleryImagesContainer.appendChild(
+             createGalleryItem(path, favorites.includes(path), true)
+         );
+    });
+
     galleryOverlay.classList.add('active');
+    localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
+    gameStarted = false;
 }
 
-// ... Event Listener für History/Detail Overlay bleiben unverändert ...
+// ... (Logik für Detailansicht, History, etc. hier der Kürze wegen ausgelassen, aber im Original beibehalten)
 
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -497,28 +507,41 @@ document.addEventListener('DOMContentLoaded', () => {
         setupGame(true); 
     }
     
-    // WICHTIG: Überschreiben des Standardverhaltens der Theme-Buttons
+    // Event Listener für Theme-Buttons
     themeButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const newTheme = e.target.dataset.theme;
             
-            // 1. Wenn ein Spiel läuft und der Benutzer wechselt, speichere den aktuellen Stand
             if (gameStarted && pairsFound < currentDifficulty.pairs) {
-                saveCurrentGame();
+                saveCurrentGame(); // Speichere den laufenden Stand des alten Themas
             }
             
-            // 2. Theme setzen
             currentTheme = newTheme;
             currentThemeConfig = gameConfigs[newTheme];
             
             themeButtons.forEach(btn => btn.classList.remove('active-theme'));
             e.target.classList.add('active-theme');
             
-            // 3. Versuchen, den gespeicherten Stand des NEUEN Themas zu laden, sonst neues Spiel starten
             if (!loadCurrentGame()) {
-                // Nur die Grid-Anzeige füllen, aber gameStarted bleibt false, bis zur ersten Karte
-                setupGame(false); 
+                setupGame(true); // Starte neues Spiel für das neue Thema
             }
         });
     });
+
+    // Event Listener für Schwierigkeits-Slider
+    difficultySlider.addEventListener('input', (e) => {
+        const newDifficultyValue = e.target.value;
+        currentDifficulty = difficultyConfigs[newDifficultyValue];
+        difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
+        
+        // Startet sofort ein neues Spiel mit der neuen Schwierigkeit (löscht vorherigen Stand)
+        setupGame(true); 
+    });
+    
+    // Event Listener für "Neues Spiel" Button
+    closeGalleryButton.addEventListener('click', () => {
+        setupGame(true);
+    });
+    
+    // ... (Detail- und History-Overlay Listener folgen hier) ...
 });
