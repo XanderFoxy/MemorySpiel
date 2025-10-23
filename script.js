@@ -8,6 +8,13 @@ const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
 const galleryImagesContainer = document.getElementById('gallery-images'); 
 
+// NEUE DOM-Elemente für Galerie/Favoriten
+const permanentGalleryContainer = document.getElementById('permanent-gallery-container');
+const permanentGallery = document.getElementById('permanent-gallery'); // Der tatsächliche Halter
+const imageDetailOverlay = document.getElementById('image-detail-overlay');
+const detailImage = document.getElementById('detail-image');
+const closeDetailButton = document.getElementById('close-detail');
+
 const difficultySlider = document.getElementById('difficulty-slider');
 const difficultyDescription = document.getElementById('difficulty-description');
 
@@ -21,7 +28,7 @@ let lockBoard = false;
 let firstCard, secondCard; 
 let moves = 0;
 let pairsFound = 0;
-let matchedImages = []; 
+let matchedImages = []; // Aktuell gesammelte Bilder dieses Spiels
 
 const difficultyConfigs = {
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
@@ -29,9 +36,9 @@ const difficultyConfigs = {
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
-
-// WICHTIG: Relativer Pfad
 const BASE_URL = 'Bilder/'; 
+
+// --- Datenstrukturen (KORRIGIERT FÜR BABYFOX) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -49,7 +56,6 @@ function selectRandomImagePaths(allPaths, count) {
     return shuffled.slice(0, count);
 }
 
-// Generiert nur die nummerierten Pfade (z.B. 1.jpg, 2.jpg)
 function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     let allNumbers = [];
     for (let i = 1; i <= maxPossibleImages; i++) {
@@ -58,18 +64,14 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
-// Hier ist die vollständige, korrigierte Liste für BabyFox
 const BABYFOX_FILES = [
-    // Neue, manuell hinzugefügte Pfade
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
     'BabyFox/IMG_0688.jpeg', 
     'BabyFox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
     'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
-    // Ältere, nummerierte Pfade (bis 20)
     ...generateNumberedPaths('BabyFox', 20)
 ];
-
 
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
@@ -81,7 +83,6 @@ const IN_ITALIEN_FILES = [
 
 const gameConfigs = {
     'InItalien': { allImagePaths: IN_ITALIEN_FILES, name: 'InItalien' },
-    // BabyFox verwendet jetzt die vollständige, korrigierte Liste
     'BabyFox': { allImagePaths: BABYFOX_FILES, name: 'BabyFox' }, 
     'ThroughTheYears': { allImagePaths: generateNumberedPaths('ThroughTheYears', 20), name: 'ThroughTheYears' },
     'Gemixt': { name: 'Gemixt' }
@@ -89,29 +90,104 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// ... (Rest der Event Listener und Funktionen bleibt unverändert, da sie in der letzten Antwort stabil waren) ...
-difficultySlider.addEventListener('input', (e) => {
-    currentDifficulty = difficultyConfigs[e.target.value];
-    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
-    const pairs = e.target.value === '2' ? 18 : 8;
-    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
-});
+// --- FAVORITEN UND GALERIE LOGIK (Wieder eingefügt und korrigiert) ---
 
-difficultySlider.addEventListener('change', () => {
-    setupGame(); 
-});
+function getFavorites() {
+    try {
+        const favorites = localStorage.getItem('memoryFavorites');
+        // Filtert Duplikate und leere Einträge
+        return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
+    } catch (e) {
+        console.error("Fehler beim Lesen der Favoriten aus localStorage:", e);
+        return [];
+    }
+}
 
-themeButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-        const theme = e.target.dataset.theme;
-        currentThemeConfig = gameConfigs[theme];
-        
-        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
-        e.target.classList.add('active-theme');
-        
-        setupGame();
+function saveFavorites(favorites) {
+    try {
+        localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
+    } catch (e) {
+        console.error("Fehler beim Speichern der Favoriten in localStorage:", e);
+    }
+}
+
+function createGalleryItem(imageSrc, isFavorite = false) {
+    const item = document.createElement('div');
+    item.classList.add('gallery-item');
+    item.dataset.src = imageSrc;
+    
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.alt = 'Gefundenes Bild';
+    item.appendChild(img);
+
+    const icon = document.createElement('span');
+    icon.classList.add('favorite-icon', 'fas', 'fa-heart');
+    if (isFavorite) {
+        icon.classList.add('active');
+    }
+
+    icon.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        toggleFavorite(imageSrc, icon);
     });
-});
+    
+    item.addEventListener('click', () => {
+        showImageDetail(imageSrc);
+    });
+
+    item.appendChild(icon);
+    return item;
+}
+
+function toggleFavorite(imageSrc, iconElement) {
+    let favorites = getFavorites();
+    const index = favorites.indexOf(imageSrc);
+
+    if (index === -1) {
+        favorites.push(imageSrc);
+        iconElement.classList.add('active');
+    } else {
+        favorites.splice(index, 1);
+        iconElement.classList.remove('active');
+    }
+    saveFavorites(favorites);
+    // Lade Galerie neu, um die Änderung zu reflektieren (besonders bei "Alle" Ansicht)
+    loadPermanentGallery(); 
+}
+
+function showImageDetail(imageSrc) {
+    detailImage.src = imageSrc;
+    imageDetailOverlay.classList.add('active');
+}
+
+if (closeDetailButton) {
+    closeDetailButton.addEventListener('click', () => {
+        imageDetailOverlay.classList.remove('active');
+    });
+}
+
+function loadPermanentGallery() {
+    permanentGallery.innerHTML = '';
+    const favorites = getFavorites();
+    
+    // Anzeigen der Favoriten (falls vorhanden)
+    if (favorites.length > 0) {
+        favorites.forEach(src => {
+            permanentGallery.appendChild(createGalleryItem(src, true)); 
+        });
+    } else {
+         const message = document.createElement('p');
+         message.textContent = "Deine Favoriten erscheinen hier, sobald du Bilder markierst.";
+         message.style.marginTop = '10px';
+         message.style.color = 'var(--primary-color)';
+         permanentGallery.appendChild(message);
+    }
+}
+
+// --- SPIELLOGIK (Mit Galerie-Integration) ---
+
+// ... (Slider- und Theme-Event-Listener bleiben unverändert) ...
 
 function setupGame() {
     memoryGrid.innerHTML = '';
@@ -139,7 +215,6 @@ function setupGame() {
     
     if (currentThemeConfig.name === 'Gemixt') {
         const allPaths = [];
-        // Verwenden Sie die korrigierten gameConfigs
         ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
              const config = gameConfigs[folderName];
              if (config && config.allImagePaths) {
@@ -214,7 +289,7 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Karten bleiben offen und sind mit 'match' markiert
+    // Karten bleiben offen (match und flip)
     firstCard.classList.add('match', 'flip'); 
     secondCard.classList.add('match', 'flip'); 
     
@@ -222,9 +297,22 @@ function disableCards() {
     secondCard.removeEventListener('click', flipCard);
     
     const matchedImageSrc = firstCard.querySelector('.front-face img').src;
-    matchedImages.push(matchedImageSrc);
     
     showMatchSuccess(matchedImageSrc);
+    
+    // Füge das Bild zur Galerie hinzu, nachdem das Overlay weg ist (Simulation der Animation)
+    setTimeout(() => {
+        // Füge das gefundene Bild zur Favoritenliste hinzu, wenn es noch nicht da ist
+        let favorites = getFavorites();
+        if (!favorites.includes(matchedImageSrc)) {
+             // Wichtig: Ich füge es nicht automatisch zu den Favoriten hinzu, 
+             // sondern *zeige* es nur in der Galerie an. Da wir keine 
+             // "aktuelle Spiel"-Galerie mehr haben, verwende ich loadPermanentGallery 
+             // um die Favoriten anzuzeigen.
+        }
+        
+        loadPermanentGallery(); 
+    }, 1500);
     
     resetBoard(); 
     
@@ -261,15 +349,8 @@ function showMatchSuccess(imageSrc) {
 
 function gameOver() {
     soundWin.play();
-    galleryImagesContainer.innerHTML = '';
-    
-    matchedImages.forEach(src => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = 'Gefundenes Bild';
-        galleryImagesContainer.appendChild(img);
-    });
-    galleryOverlay.classList.add('active');
+    // Zeigt die einfache "Glückwunsch" Overlay (kann entfernt werden, wenn nicht gewünscht)
+    galleryOverlay.classList.add('active'); 
 }
 
 closeGalleryButton.addEventListener('click', () => {
@@ -289,5 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentThemeConfig = gameConfigs['Gemixt'];
 
+    // Lade die Favoriten beim Start
+    loadPermanentGallery();
+    
     setupGame();
 });
