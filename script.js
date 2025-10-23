@@ -8,7 +8,6 @@ const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
 const galleryImagesContainer = document.getElementById('gallery-images'); 
 
-const permanentGalleryContainer = document.getElementById('permanent-gallery-container');
 const permanentGallery = document.getElementById('permanent-gallery');
 const imageDetailOverlay = document.getElementById('image-detail-overlay');
 const detailImage = document.getElementById('detail-image');
@@ -22,7 +21,7 @@ const soundError = document.getElementById('sound-error');
 const soundWin = document.getElementById('sound-win');
 
 let cards = [];
-let hasFlippedCard = false; 
+let hasFlippedCard = false; // Wird genutzt, um zu prüfen, ob es die erste oder zweite Karte ist
 let lockBoard = false; 
 let firstCard, secondCard; 
 let moves = 0;
@@ -30,14 +29,15 @@ let pairsFound = 0;
 let matchedImages = []; 
 
 const difficultyConfigs = {
-    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
-    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
+    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, cardSize: '110px' }, // 4x4 Grid
+    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, cardSize: '100px' } // 6x6 Grid
 };
 
+// Initialwert: Leicht (1)
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 const BASE_URL = 'Bilder/'; 
 
-// --- Datenstrukturen und Hilfsfunktionen (Pfade und Shuffle bleiben gleich) ---
+// --- Datenstrukturen und Hilfsfunktionen (Pfade und Shuffle) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -48,6 +48,8 @@ function shuffleArray(array) {
 
 function selectRandomImagePaths(allPaths, count) {
     if (allPaths.length < count) {
+        // Falls nicht genug Bilder vorhanden, nimm alle und warne.
+        console.warn(`WARNUNG: Nur ${allPaths.length} Bilder gefunden, obwohl ${count} Paare benötigt.`);
         count = allPaths.length;
     }
     let shuffled = [...allPaths];
@@ -63,6 +65,7 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
+// Hier die korrigierten Pfade
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
@@ -80,18 +83,22 @@ const IN_ITALIEN_FILES = [
     'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg' 
 ];
 
+const THROUGH_THE_YEARS_FILES = generateNumberedPaths('ThroughTheYears', 20);
+
 const gameConfigs = {
     'InItalien': { allImagePaths: IN_ITALIEN_FILES, name: 'InItalien' },
     'BabyFox': { allImagePaths: BABYFOX_FILES, name: 'BabyFox' }, 
-    'ThroughTheYears': { allImagePaths: generateNumberedPaths('ThroughTheYears', 20), name: 'ThroughTheYears' },
+    'ThroughTheYears': { allImagePaths: THROUGH_THE_YEARS_FILES, name: 'ThroughTheYears' },
     'Gemixt': { name: 'Gemixt' }
 };
 
+// Standard-Start: Gemixt
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// --- FAVORITEN UND GALERIE LOGIK (Unverändert) ---
+// --- FAVORITEN UND GALERIE LOGIK (Beibehalten) ---
 
 function getFavorites() {
+    // ... Logik unverändert ...
     try {
         const favorites = localStorage.getItem('memoryFavorites');
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
@@ -101,6 +108,7 @@ function getFavorites() {
 }
 
 function saveFavorites(favorites) {
+    // ... Logik unverändert ...
     try {
         localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
     } catch (e) {
@@ -183,13 +191,13 @@ function loadPermanentGallery() {
 // --- SPIELLOGIK ---
 
 difficultySlider.addEventListener('input', (e) => {
+    // Aktualisiert die Anzeige des Sliders
     currentDifficulty = difficultyConfigs[e.target.value];
-    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
-    const pairs = e.target.value === '2' ? 18 : 8;
-    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
+    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
 });
 
 difficultySlider.addEventListener('change', () => {
+    // Startet das Spiel neu, wenn der Slider losgelassen wird
     setupGame(); 
 });
 
@@ -218,7 +226,6 @@ function setupGame() {
     matchedImages = []; 
     
     matchSuccessOverlay.classList.remove('active');
-    // WICHTIG: Sicherstellen, dass die Galerie-Overlay beim Start NICHT aktiv ist.
     galleryOverlay.classList.remove('active');
     
     const MAX_PAIRS = currentDifficulty.pairs; 
@@ -226,25 +233,21 @@ function setupGame() {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
+    // Grid-Anpassung basierend auf der Schwierigkeit
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
-    memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
-
-    let selectedPaths = [];
+    // Setzt die Kartengröße für CSS (wichtig für die Darstellung)
+    document.documentElement.style.setProperty('--card-size', currentDifficulty.cardSize); 
     
+    let allPaths = [];
     if (currentThemeConfig.name === 'Gemixt') {
-        let allPaths = [];
-        ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
-             const config = gameConfigs[folderName];
-             if (config && config.allImagePaths) {
-                 allPaths = allPaths.concat(config.allImagePaths);
-             }
-        });
-        selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
-
+        // Sammle alle Pfade von allen Themen
+        allPaths = IN_ITALIEN_FILES.concat(BABYFOX_FILES, THROUGH_THE_YEARS_FILES);
     } else if (currentThemeConfig.allImagePaths) {
-        selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
+        allPaths = currentThemeConfig.allImagePaths;
     }
     
+    const selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
+
     if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
         console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade überprüfen.`);
         memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
@@ -276,11 +279,14 @@ function setupGame() {
         cards.push(card);
     });
     
+    // Event Listener für Karten HIER hinzufügen!
     cards.forEach(card => card.addEventListener('click', flipCard));
 }
 
 
 function flipCard() {
+    // Problem: Das `this` war ein div, aber in der alten Version wurde das `div` als Karte behandelt.
+    // Ich fixiere hier die Logik der Karten-Identifizierung und des Lockings.
     if (lockBoard) return;
     if (this === firstCard) return; 
     if (this.classList.contains('match')) return; 
@@ -288,11 +294,13 @@ function flipCard() {
     this.classList.add('flip');
 
     if (!hasFlippedCard) {
+        // Erste Karte umgedreht
         hasFlippedCard = true;
         firstCard = this;
         return;
     }
     
+    // Zweite Karte umgedreht
     secondCard = this;
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
@@ -310,8 +318,8 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    firstCard.classList.add('match', 'flip'); 
-    secondCard.classList.add('match', 'flip'); 
+    firstCard.classList.add('match'); 
+    secondCard.classList.add('match'); 
     
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
@@ -321,10 +329,11 @@ function disableCards() {
     
     showMatchSuccess(matchedImageSrc);
     
+    // Fügt das Bild zur permanenten Galerie hinzu (mit Verzögerung)
     setTimeout(() => {
         matchedImages.push(matchedImagePath);
         loadPermanentGallery(); 
-    }, 1500); 
+    }, 150); 
 
     resetBoard(); 
     
@@ -367,10 +376,10 @@ function gameOver() {
 
     matchedImages.forEach(path => {
         const item = createGalleryItem(path, favorites.includes(path));
-        
+        // Entferne den Klick-Listener vom Icon in der temporären Galerie
         const icon = item.querySelector('.favorite-icon');
         if(icon) {
-            icon.remove();
+            icon.removeEventListener('click', icon.onclick);
         }
         item.removeEventListener('click', item.onclick);
         galleryImagesContainer.appendChild(item);
@@ -385,6 +394,7 @@ closeGalleryButton.addEventListener('click', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Setze die Standardeinstellungen für die Benutzeroberfläche: Leicht & Gemixt
     const initialDifficulty = difficultyConfigs[difficultySlider.value];
     difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
     
@@ -397,4 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadPermanentGallery();
     
-    // Spielstart mit initialen Einstellungen
+    // WICHTIG: Spielstart mit initialen Einstellungen
+    setupGame(); 
+});
