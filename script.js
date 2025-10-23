@@ -8,7 +8,7 @@ const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
 const galleryImagesContainer = document.getElementById('gallery-images');
 
-// NEU: Slider Elemente
+// Slider Elemente
 const difficultySlider = document.getElementById('difficulty-slider');
 const difficultyDescription = document.getElementById('difficulty-description');
 
@@ -24,14 +24,17 @@ let moves = 0;
 let pairsFound = 0;
 let matchedImages = []; 
 
-// NEU: Schwierigkeitskonfiguration über Slider-Werte (1, 2, 3)
+// NEU: Schwierigkeitskonfiguration mit quadratischen Grids
 const difficultyConfigs = {
-    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '440px' }, // 4x4 Grid
-    '2': { name: 'Mittel', pairs: 12, columns: 6, cardsTotal: 24, gridMaxW: '680px' }, // 4x6 Grid
-    '3': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '680px' }  // 6x6 Grid
+    // 4x4 = 16 Karten (8 Paare)
+    '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
+    // 6x6 = 36 Karten (18 Paare)
+    '2': { name: 'Mittel', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' }, 
+    // 8x8 = 64 Karten (32 Paare)
+    '3': { name: 'Schwer', pairs: 32, columns: 8, cardsTotal: 64, gridMaxW: '1040px' }  
 };
 
-let currentDifficulty = difficultyConfigs[difficultySlider.value]; // Start: Mittel
+let currentDifficulty = difficultyConfigs[difficultySlider.value]; // Start: Leicht (Wert 1)
 
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
 
@@ -98,12 +101,12 @@ const gameConfigs = {
         name: 'ThroughTheYears'
     },
     'Gemixt': { 
-        // Für Gemixt werden die Pfade in setupGame dynamisch ermittelt
         name: 'Gemixt'
     }
 };
 
-let currentThemeConfig = gameConfigs['InItalien']; 
+// Standard-Thema ist jetzt Gemixt
+let currentThemeConfig = gameConfigs['Gemixt']; 
 
 // Event Listener für Slider (Schwierigkeit)
 difficultySlider.addEventListener('input', (e) => {
@@ -112,7 +115,7 @@ difficultySlider.addEventListener('input', (e) => {
 });
 
 difficultySlider.addEventListener('change', () => {
-    setupGame(); // Spiel neu starten, wenn Slider losgelassen wird
+    setupGame(); 
 });
 
 
@@ -138,9 +141,12 @@ function setupGame() {
     lockBoard = false;
     moves = 0;
     pairsFound = 0;
-    matchedImages = []; // Wichtig: Galerie für neues Spiel leeren
+    matchedImages = []; 
     
-    // Aktuelle Schwierigkeitseinstellungen verwenden
+    // Verstecke die Overlays am Anfang
+    matchSuccessOverlay.classList.remove('active');
+    galleryOverlay.classList.remove('active');
+    
     const MAX_PAIRS = currentDifficulty.pairs; 
     
     statsMoves.textContent = `Züge: ${moves}`;
@@ -148,7 +154,6 @@ function setupGame() {
 
     // Setze das Grid basierend auf der Schwierigkeit
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
-    // Dies muss im CSS richtig behandelt werden, aber wir setzen den Maximalwert hier.
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
     let selectedPaths = [];
@@ -159,25 +164,20 @@ function setupGame() {
         
         otherFolders.forEach(folderName => {
              const config = gameConfigs[folderName];
-             // KORREKTUR: Sicherstellen, dass die Pfade vorhanden sind, bevor sie hinzugefügt werden
              if (config && config.allImagePaths) {
                  allPaths = allPaths.concat(config.allImagePaths);
              }
         });
         
-        // **KORREKTUR** Die allImagePaths sind im Gemixt-Objekt nicht definiert, sie werden hier gesammelt.
         selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
 
     } else if (currentThemeConfig.allImagePaths) {
-        // Wählt die benötigte Anzahl zufälliger Paare aus dem aktuellen Themen-Pool
         selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
     }
     
-    // **KORREKTUR** Falls selectedPaths leer ist (z.B. bei Gemixt-Fehler), wird hier nichts ausgeführt
     if (selectedPaths.length === 0) {
         console.error("Es konnten keine Bilder für das Spiel geladen werden.");
-        // Ggf. eine Fehlermeldung auf dem Spielfeld anzeigen
-        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1;">Fehler: Konnte keine Bilder laden. Bitte Thema prüfen.</p>';
+        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center;">Fehler: Konnte keine Bilder laden. Bitte Thema prüfen.</p>';
         return;
     }
 
@@ -206,17 +206,25 @@ function setupGame() {
     });
 }
 
-// ... (flipCard, checkForMatch, disableCards, unflipCards, resetBoard, showMatchSuccess, gameOver bleiben unverändert) ...
+/**
+ * KORREKTUR: Korrigierte Logik für das Aufdecken der Karten
+ */
 function flipCard() {
+    // Wenn das Brett gesperrt ist (während eines Vergleichs) oder
+    // die Karte bereits die erste Karte ist oder bereits ein Match hat, tue nichts.
     if (lockBoard || this === firstCard || this.classList.contains('match')) return;
+    
     this.classList.add('flip');
+
     if (!firstCard) {
         firstCard = this;
         return;
     }
+    
     secondCard = this;
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
+    
     checkForMatch();
 }
 
@@ -229,14 +237,22 @@ function disableCards() {
     pairsFound++;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
+    
+    // Markiere die Karten als Match
     firstCard.classList.add('match');
     secondCard.classList.add('match');
+    
+    // Speichere das gefundene Bild für die Galerie
     const matchedImageSrc = firstCard.querySelector('.front-face').src;
     matchedImages.push(matchedImageSrc);
+    
     showMatchSuccess(matchedImageSrc);
+    
+    // Entferne Event Listener, damit die Karten nicht mehr geklickt werden können
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
-    resetBoard();
+    
+    resetBoard(false); // Nicht sperren nach Match
     
     if (pairsFound === currentDifficulty.pairs) { 
         setTimeout(gameOver, 1000); 
@@ -244,22 +260,28 @@ function disableCards() {
 }
 
 function unflipCards() {
-    lockBoard = true; 
+    lockBoard = true; // Board sperren
     soundError.play();
     firstCard.classList.add('error');
     secondCard.classList.add('error');
+    
     setTimeout(() => {
         firstCard.classList.remove('flip', 'error');
         secondCard.classList.remove('flip', 'error');
-        resetBoard();
+        resetBoard(true); // Board freigeben
     }, 1000);
 }
 
-function resetBoard() {
-    [firstCard, secondCard, lockBoard] = [null, null, false];
+function resetBoard(releaseLock = true) {
+    [firstCard, secondCard] = [null, null];
+    if(releaseLock) {
+        lockBoard = false;
+    }
 }
 
 function showMatchSuccess(imageSrc) {
+    // Die unerwünschte Anzeige des Originalbildes unter dem Spielfeld ist behoben, 
+    // da wir das Bild jetzt nur im Overlay zeigen
     matchedImagePreview.src = imageSrc;
     matchSuccessOverlay.classList.add('active');
     setTimeout(() => {
@@ -277,7 +299,7 @@ function gameOver() {
         galleryImagesContainer.appendChild(img);
     });
     galleryOverlay.classList.add('active');
-    matchedImages = []; 
+    // matchedImages wird in setupGame geleert, wenn das Spiel neu gestartet wird
 }
 
 closeGalleryButton.addEventListener('click', () => {
@@ -292,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
     
     // Initiales Styling für den Start-Button (Thema)
-    const initialThemeButton = document.querySelector('.theme-button[data-theme="InItalien"]');
+    const initialThemeButton = document.querySelector('.theme-button[data-theme="Gemixt"]');
     if (initialThemeButton) {
         initialThemeButton.classList.add('active-theme');
     }
