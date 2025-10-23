@@ -1,48 +1,72 @@
 :root {
+    /* Farben beibehalten */
     --primary-color: #5d54a4; /* Dunkles Lila */
     --secondary-color: #f7b731; /* Gelb-Orange (Golden) */
+    
+    /* Neues Karten-Design */
     --card-main-color: #c43847; /* Rot */
     --card-border-color: #fbe695; /* Hellgelber Rand */
+    
+    /* Layout-Farben */
     --text-color: #333;
     --bg-dark-main: #3d344a; /* Basis für Samt */
     --bg-white: #ffffff;
-    --match-color: #38c738; 
-    --error-color: #ff3838; 
-    --wait-color: #ff9900; 
     
+    /* Zustandsfarben */
+    --match-color: #38c738; /* Grün */
+    --error-color: #ff3838; /* Rot */
+    --wait-color: #ff9900; /* Orange für erste Karte */
+
     /* NEU: Farben für Buttons (nicht blank-weiß) */
     --button-bg-inactive: #e0e0e0; /* Hellgrau */
     --button-text-inactive: var(--primary-color);
 }
 
-/* --- Globale Stile und Layout (Unverändert) --- */
-/* ... body, .game-container, .sidebar ... */
-
-/* --- Hauptbereich und Gitter (Samt-Effekt) --- */
-.main-content {
-    flex-grow: 1;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: var(--bg-white); 
-    
-    /* KORRIGIERT: Samt-Effekt (Unregelmäßiger Verlauf/Lichtreflex auf der gesamten Fläche) */
-    background: var(--bg-dark-main);
-    background-image: radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%),
-                      radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%),
-                      radial-gradient(circle at 50% 80%, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
-    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5); /* Für Tiefe */
-    
-    perspective: 1000px; /* Wichtig für 3D-Flip-Effekt der Karten */
+/* --- Globale Stile und Layout --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/* --- Button-Design KORRIGIERT --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #d3e1f1, #c1ceda); 
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.game-container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: 50px auto 0;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    border: 5px solid var(--bg-white); 
+}
+
+/* --- Sidebar und Buttons --- */
+.sidebar {
+    width: 250px;
+    background: linear-gradient(to bottom, var(--primary-color) 0%, #4a4387 100%); 
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    border-right: 3px solid var(--secondary-color);
+}
+
+/* KORRIGIERT: Button-Styling (nicht blank-weiß) */
 .theme-button {
-    /* NEU: Hintergrund ist nicht mehr blank-weiß, sondern leicht grau */
-    background-color: var(--button-bg-inactive); 
-    color: var(--button-text-inactive); 
-    border: 3px solid var(--secondary-color); 
+    background-color: var(--button-bg-inactive); /* Hellgrau */
+    color: var(--button-text-inactive); /* Text Lila */
+    border: 3px solid var(--secondary-color); /* Golden */
     padding: 12px 20px;
     border-radius: 8px; 
     font-weight: bold;
@@ -60,11 +84,34 @@
 }
 
 .theme-button.active-theme {
-    /* AKTIVER STATUS: Golden, Text Lila */
-    background-color: var(--secondary-color); 
-    color: var(--primary-color); 
-    border: 3px solid var(--card-main-color); 
+    background-color: var(--secondary-color); /* Aktiv: Golden */
+    color: var(--primary-color); /* Text: Lila */
+    border: 3px solid var(--card-main-color); /* Rand: Rot */
     transform: scale(1.05);
+}
+
+/* --- Hauptbereich und Gitter (Samt-Effekt) --- */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--bg-white); 
+    
+    /* KORRIGIERT: Samt-Effekt auf dem gesamten main-content */
+    background: var(--bg-dark-main);
+    background-image: radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%),
+                      radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%),
+                      radial-gradient(circle at 50% 80%, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+    
+    perspective: 1000px; 
+}
+
+/* Verstecken von Elementen, die nur bei Bedarf erscheinen sollen */
+.hidden-by-default {
+    display: none !important;
 }
 
 /* --- Memory Gitter und Karten KORRIGIERT --- */
@@ -73,12 +120,11 @@
     gap: 15px;
     margin: 20px 0;
     width: 100%;
-    /* Max-Width wird durch JS gesetzt */
 }
 
 .memory-card {
     position: relative;
-    height: 120px; /* Standardhöhe der Karte */
+    height: 120px; 
     width: 100%;
     cursor: pointer;
     transform-style: preserve-3d;
@@ -104,20 +150,20 @@
     padding: 5px;
 }
 
-/* Rückseite (nicht gefunden) */
+/* Rückseite (verdeckt) */
 .back-face {
     background: var(--card-main-color);
     border: 4px solid var(--card-border-color);
     font-size: 3rem;
     color: var(--card-border-color);
-    transform: rotateY(0deg); /* Startposition */
+    transform: rotateY(0deg); 
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Vorderseite (gefundenes Bild) */
+/* Vorderseite (Bild) */
 .front-face {
     background: var(--bg-white);
-    transform: rotateY(180deg); /* Startposition (umgedreht) */
+    transform: rotateY(180deg); 
     border: 4px solid var(--bg-white);
 }
 
@@ -132,9 +178,97 @@
 .memory-card.waiting {
     box-shadow: 0 0 15px var(--wait-color), 0 0 30px var(--wait-color);
 }
+
 .memory-card.match {
     border-color: var(--match-color); 
-    animation: none; /* Keine Animation, damit die Karte ruhig bleibt */
 }
 
-/* ... weitere CSS-Regeln (hidden-by-default, Overlays, etc.) bleiben unverändert ... */
+.memory-card.error {
+    border-color: var(--error-color);
+    animation: shakeError 0.5s, pulseError 0.5s ease-in-out;
+}
+
+/* ... (Restliche Galerie- und Overlay-Stile) ... */
+.daily-matches-container {
+    width: 100%;
+    max-width: 900px;
+    padding: 15px 0;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.daily-matches-gallery {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 10px 0;
+    gap: 15px;
+    border-top: 5px solid var(--primary-color);
+    border-bottom: 5px solid var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    min-height: 100px;
+    align-items: center;
+}
+
+.gallery-item {
+    position: relative;
+    width: 90px;
+    height: 90px; 
+    flex-shrink: 0; 
+    border: 3px solid var(--secondary-color); 
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: var(--bg-white);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Overlays */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.overlay.active {
+    display: flex;
+}
+
+.overlay-content {
+    background: var(--bg-dark-main);
+    color: var(--bg-white);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+}
+
+.match-success-overlay .overlay-content {
+    max-width: 350px; 
+    max-height: 350px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 5px solid var(--secondary-color);
+    padding: 10px;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+}
+
+.match-success-overlay #matched-image-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; 
+}
