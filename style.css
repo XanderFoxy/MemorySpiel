@@ -1,16 +1,11 @@
 :root {
-    /* Farbpalette aufgeweicht */
-    --primary-color: #4a4387; /* Dunkles Lila */
-    --secondary-color: #f7b731; /* Gelb-Orange */
+    --primary-color: #A52A2A; /* Tiefes Rot/Braunrot */
+    --secondary-color: #FFD700; /* Goldgelb für Ränder und Akzente */
     --text-color: #333;
-    
-    /* NEUE KARTENFARBEN */
-    --card-back-color: #d9534f; /* Spielkarten-Rot */
-    --card-border-color: #fce892; /* Helles Gelb für den Rand */
-    --match-color: #5cb85c; /* Grün */
+    --card-back-color: #B22222; /* Hellere Karte Rückseite */
+    --card-border-color: #FFD700; /* Gelber Rand */
+    --match-color: #38c738; /* Grün */
     --error-color: #ff3838; /* Rot */
-    --shadow-light: rgba(0, 0, 0, 0.1);
-    --shadow-strong: rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -21,31 +16,30 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Sanfterer Hintergrund */
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
+    /* Hintergrund: Sanfter Holz- oder Papier-Look */
+    background: #fdfaf5 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100"><defs><pattern id="p" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 0 0 L 10 10 M 10 0 L 0 10" stroke="%23f0e6d6" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="%23f7f0e6"/><rect width="100" height="100" fill="url(%23p)" opacity="0.3"/></svg>');
     color: var(--text-color);
     min-height: 100vh;
     padding: 20px;
 }
 
 .back-link {
-    position: fixed; /* Besser für ein Spiel */
+    position: absolute;
     top: 20px;
     left: 20px;
-    z-index: 100;
     text-decoration: none;
-    color: white;
-    font-size: 1rem;
+    color: var(--primary-color);
+    font-size: 1.1rem;
     padding: 8px 15px;
     border-radius: 25px;
-    background-color: var(--primary-color);
-    box-shadow: 0 4px 10px var(--shadow-strong);
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s, transform 0.2s;
-    font-weight: 500;
+    z-index: 50;
 }
 
 .back-link:hover {
-    background-color: #5d54a4;
+    background-color: #f0f0f0;
     transform: translateY(-2px);
 }
 
@@ -56,26 +50,28 @@ body {
 .game-container {
     display: flex;
     max-width: 1200px;
-    margin: 40px auto 0; /* Mehr Platz oben */
-    background-color: white;
-    border-radius: 20px; /* Abgerundeter */
-    box-shadow: 0 15px 40px var(--shadow-strong);
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     overflow: hidden;
+    margin-top: 50px;
 }
 
 .sidebar {
     width: 250px;
-    background: linear-gradient(180deg, var(--primary-color), #3a336e); /* Tieferer Look */
+    background-color: var(--primary-color);
     color: white;
     padding: 30px 20px;
     text-align: center;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar h2 {
     margin-bottom: 25px;
-    color: var(--secondary-color);
-    border-bottom: 2px solid var(--secondary-color);
+    border-bottom: 3px solid var(--secondary-color);
     padding-bottom: 10px;
+    font-size: 1.5rem;
 }
 
 .sidebar nav {
@@ -84,35 +80,34 @@ body {
 }
 
 .theme-button {
-    background-color: #5d54a4;
+    background-color: rgba(255, 255, 255, 0.15); /* Leichter weißer Hintergrund */
     color: white;
-    border: none;
+    border: 2px solid var(--secondary-color);
     padding: 12px;
-    margin-bottom: 15px;
-    border-radius: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
     font-weight: bold;
-    box-shadow: 0 4px 6px var(--shadow-light);
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    transition: background-color 0.3s, color 0.3s, transform 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .theme-button:hover {
-    background-color: #5d54a4;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px var(--shadow-strong);
+    background-color: var(--secondary-color); 
+    color: var(--primary-color);
+    transform: translateX(5px);
 }
 
 .theme-button.active-theme {
-    background-color: var(--secondary-color); /* Aktiver Button wird Gelb */
+    background-color: var(--secondary-color);
     color: var(--primary-color);
-    box-shadow: 0 2px 4px var(--shadow-light);
-    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .main-content {
     flex-grow: 1;
-    padding: 40px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -120,51 +115,53 @@ body {
 
 .main-content h1 {
     color: var(--primary-color);
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     font-size: 3rem;
-    font-weight: 800;
-    text-shadow: 1px 1px 2px var(--shadow-light);
+    text-shadow: 2px 2px 0px var(--secondary-color); /* Hinzugefügter Spiele-Look */
 }
 
 .stats {
     width: 100%;
-    max-width: 650px;
+    max-width: 600px;
     display: flex;
     justify-content: space-around;
-    padding: 15px 30px;
+    padding: 15px;
     margin-bottom: 30px;
-    background-color: var(--secondary-color);
-    border-radius: 15px;
-    box-shadow: 0 4px 10px var(--shadow-light);
+    background-color: #fefae6; /* Cremeweiß */
+    border: 2px solid var(--secondary-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     font-size: 1.3rem;
     font-weight: bold;
     color: var(--primary-color);
-    border: 3px solid #f9da9b;
 }
 
+/* Feste Grid-Größe für 6x4 Karten */
 .memory-grid {
     display: grid;
-    /* STANDARD: 6 Spalten für größere Bildschirme */
-    grid-template-columns: repeat(6, 1fr); 
-    gap: 15px; /* Größerer Abstand zwischen den Karten */
+    grid-template-columns: repeat(6, 1fr); /* Immer 6 Spalten */
+    gap: 12px;
     padding: 15px;
-    background-color: #e9ecef;
-    border-radius: 15px;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 900px; 
+    background-color: #f5f5f5;
+    border-radius: 12px;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+    max-width: 800px; /* Begrenzt die Größe für besseres Aussehen */
 }
 
 .memory-card {
     position: relative;
     perspective: 1000px;
-    /* STANDARDFALL: 120px */
-    width: 120px; 
-    height: 120px;
+    width: 110px; /* Leicht vergrößerte Karten */
+    height: 150px; /* Spielkarten-Verhältnis */
     cursor: pointer;
     transform-style: preserve-3d;
     transition: transform 0.6s, box-shadow 0.3s;
-    border-radius: 12px;
-    box-shadow: 0 6px 15px var(--shadow-light); 
+    border-radius: 10px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Schatten für Tiefe */
+}
+
+.memory-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Zustände der Karte */
@@ -174,14 +171,12 @@ body {
 
 .memory-card.match {
     pointer-events: none;
-    border: 4px solid var(--match-color);
-    box-shadow: 0 0 15px var(--match-color);
+    border: 3px solid var(--match-color);
     animation: pulseMatch 0.5s;
 }
 
 .memory-card.error {
-    border: 4px solid var(--error-color);
-    box-shadow: 0 0 15px var(--error-color);
+    border: 3px solid var(--error-color);
     animation: shakeError 0.5s;
 }
 
@@ -190,35 +185,33 @@ body {
     width: 100%;
     height: 100%;
     position: absolute;
-    border-radius: 10px; /* Etwas kleinerer Radius für den inneren Inhalt */
+    border-radius: 10px;
     backface-visibility: hidden;
+    border: 3px solid var(--card-border-color); /* Gelber Rand für Spielkarten-Look */
     overflow: hidden;
 }
 
 .front-face {
     transform: rotateY(180deg);
     background-color: white;
-    border: 3px solid #ddd;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    /* WICHTIG: Sorgt dafür, dass Bilder ohne Verzerrung zentriert ausgeschnitten werden */
-    object-fit: cover; 
-    border-radius: 8px; 
+    object-fit: cover;
+    border-radius: 7px;
 }
 
 .back-face {
-    background-color: var(--card-back-color);
+    background-color: var(--card-back-color); /* Rot */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 4rem; /* Fuchs-Emoji größer */
-    color: var(--card-border-color); /* Farbe des Emojis */
-    /* Spielkarten-Design: Roter Hintergrund mit gelbem Rand */
-    border: 5px solid var(--card-border-color); 
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+    font-size: 4rem; /* Großes Emoji */
+    color: white;
+    /* Optional: Ein Hintergrundmuster hinzufügen, um es weniger flach zu machen */
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.1) 0px, rgba(255,255,255,.1) 1px, transparent 1px, transparent 8px);
 }
 
 /* OVERLAY (Match Success & Gallery) */
@@ -228,7 +221,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9); /* Dunklerer Hintergrund */
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -244,14 +237,14 @@ body {
 }
 
 .overlay-content {
-    background: white;
+    background: #fdfaf5; /* Hell mit Spielkarten-Look */
     padding: 40px;
-    border-radius: 20px;
+    border-radius: 15px;
     text-align: center;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
     transform: scale(0.7);
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Feder-Effekt */
-    max-width: 90%;
+    transition: transform 0.4s;
+    border: 5px solid var(--secondary-color);
 }
 
 .overlay.active .overlay-content {
@@ -265,17 +258,17 @@ body {
 }
 
 #matched-image-preview {
-    width: 180px;
-    height: 180px;
+    max-width: 200px;
+    max-height: 200px;
     object-fit: cover;
-    border-radius: 15px;
+    border-radius: 8px;
     border: 5px solid var(--secondary-color);
 }
 
 #gallery-overlay h2 {
     color: var(--primary-color);
-    margin-bottom: 25px;
-    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-size: 2rem;
 }
 
 #gallery-images {
@@ -283,8 +276,8 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 30px;
-    max-height: 50vh;
+    margin-bottom: 20px;
+    max-height: 400px;
     overflow-y: auto;
     padding: 10px;
 }
@@ -295,36 +288,30 @@ body {
     object-fit: cover;
     border-radius: 8px;
     border: 3px solid var(--primary-color);
-    box-shadow: 0 4px 8px var(--shadow-light);
-    transition: transform 0.3s;
-}
-
-#gallery-images img:hover {
-    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #close-gallery {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-    border: none;
+    background-color: var(--primary-color);
+    color: white;
+    border: 3px solid var(--secondary-color);
     padding: 12px 25px;
-    border-radius: 30px;
+    border-radius: 25px;
     cursor: pointer;
     font-weight: bold;
     font-size: 1.1rem;
-    box-shadow: 0 4px 10px var(--shadow-light);
     transition: background-color 0.3s, transform 0.2s;
 }
 
 #close-gallery:hover {
-    background-color: #fce892;
+    background-color: #8B0000;
     transform: translateY(-2px);
 }
 
 /* Animationen */
 @keyframes pulseMatch {
     0% { transform: scale(1); }
-    50% { transform: scale(1.03); }
+    50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
 
@@ -334,22 +321,11 @@ body {
     40%, 80% { transform: translateX(8px); }
 }
 
-/* Responsive Design */
-
-/* Für Tablets und mittlere Desktops */
-@media (max-width: 992px) {
-    .memory-card {
-        width: 100px; 
-        height: 100px;
-    }
-}
-
-/* Für Mobilgeräte */
-@media (max-width: 768px) {
+/* Responsives Design für kleinere Bildschirme */
+@media (max-width: 900px) {
     .game-container {
         flex-direction: column;
-        margin-top: 80px;
-        max-width: 95%;
+        margin-top: 20px;
     }
 
     .sidebar {
@@ -363,36 +339,24 @@ body {
         justify-content: center;
         gap: 10px;
     }
-
-    .theme-button {
-        flex: 1 1 45%; 
-        margin-bottom: 0;
-    }
-
-    .main-content {
-        padding: 20px;
-    }
-
-    .main-content h1 {
-        font-size: 2rem;
-    }
-
-    .memory-grid {
-        /* WICHTIG: Auf 4 Spalten wechseln, damit die Karten auf mobilen Geräten passen */
-        grid-template-columns: repeat(4, 1fr); 
-        gap: 10px;
-    }
     
+    .theme-button {
+        flex-grow: 1;
+        max-width: 45%;
+    }
+
     .memory-card {
         width: 80px; 
-        height: 80px;
+        height: 110px; 
     }
     
     .back-face {
-        font-size: 2.5rem;
+        font-size: 3rem;
     }
     
-    .back-link {
-        position: absolute;
+    .memory-grid {
+        gap: 8px;
+        grid-template-columns: repeat(4, 1fr); /* Kleineres Grid auf Handys (4x6 = 24) */
+        max-width: none;
     }
 }
