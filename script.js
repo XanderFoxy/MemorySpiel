@@ -30,50 +30,36 @@ function shuffleArray(array) {
     }
 }
 
-const IN_ITALIEN_FILES = [
-    'InItalien/1.jpg', 'InItalien/2.jpg', 'InItalien/3.jpg', 'InItalien/4.jpg', 
-    'InItalien/5.jpg', 'InItalien/6.jpg', 'InItalien/7.jpg', 'InItalien/8.jpg', 
-    'InItalien/9.jpg', 'InItalien/10.jpg', 'InItalien/11.jpg', 'InItalien/12.jpg'
-];
-
-const BABY_FOX_FILES = [
-    'BabyFox/1.jpg', 'BabyFox/2.jpg', 'BabyFox/3.jpg', 'BabyFox/4.jpg', 
-    'BabyFox/5.jpg', 'BabyFox/6.jpg', 'BabyFox/7.jpg', 'BabyFox/8.jpg', 
-    'BabyFox/9.jpg', 'BabyFox/10.jpg', 'BabyFox/11.jpg', 'BabyFox/12.jpg'
-];
-
-const THROUGH_THE_YEARS_FILES = [
-    'ThroughTheYears/1.jpg', 'ThroughTheYears/2.jpg', 'ThroughTheYears/3.jpg', 'ThroughTheYears/4.jpg', 
-    'ThroughTheYears/5.jpg', 'ThroughTheYears/6.jpg', 'ThroughTheYears/7.jpg', 'ThroughTheYears/8.jpg', 
-    'ThroughTheYears/9.jpg', 'ThroughTheYears/10.jpg', 'ThroughTheYears/11.jpg', 'ThroughTheYears/12.jpg'
-];
-
-const ALL_THEME_PATHS = [
-    ...IN_ITALIEN_FILES,
-    ...BABY_FOX_FILES,
-    ...THROUGH_THE_YEARS_FILES
-];
+// Die maximale Anzahl potenzieller Bilder pro Themenordner ist nun 20.
+function getRandomImagePaths(folderName, maxPossibleImages = 20) {
+    let allNumbers = [];
+    for (let i = 1; i <= maxPossibleImages; i++) {
+        allNumbers.push(`${folderName}/${i}.jpg`);
+    }
+    shuffleArray(allNumbers);
+    return allNumbers.slice(0, 12);
+}
 
 const gameConfigs = {
     'InItalien': {
         imageCount: 12, 
         gridColumns: 6,
-        imagePaths: IN_ITALIEN_FILES
+        folderName: 'InItalien'
     },
     'BabyFox': { 
         imageCount: 12, 
         gridColumns: 6, 
-        imagePaths: BABY_FOX_FILES
+        folderName: 'BabyFox'
     },
     'ThroughTheYears': { 
         imageCount: 12, 
         gridColumns: 6,
-        imagePaths: THROUGH_THE_YEARS_FILES
+        folderName: 'ThroughTheYears'
     },
     'Gemixt': { 
         imageCount: 12, 
         gridColumns: 6,
-        imagePaths: ALL_THEME_PATHS
+        folderName: 'Gemixt'
     }
 };
 
@@ -113,13 +99,20 @@ function setupGame() {
 
     let selectedPaths;
     
-    if (currentConfig.imagePaths === ALL_THEME_PATHS) {
-        let shuffledAllPaths = [...ALL_THEME_PATHS];
-        shuffleArray(shuffledAllPaths);
-        // Wähle 12 zufällige Pfade aus allen Themen aus
-        selectedPaths = shuffledAllPaths.slice(0, 12);
+    if (currentConfig.folderName === 'Gemixt') {
+        const otherFolders = ['InItalien', 'BabyFox', 'ThroughTheYears'];
+        let allPaths = [];
+        
+        otherFolders.forEach(folder => {
+            const paths = getRandomImagePaths(folder, 20); 
+            allPaths = allPaths.concat(paths);
+        });
+
+        shuffleArray(allPaths);
+        selectedPaths = allPaths.slice(0, 12);
+
     } else {
-        selectedPaths = currentConfig.imagePaths;
+        selectedPaths = getRandomImagePaths(currentConfig.folderName, 20);
     }
 
     let gameCardValues = []; 
