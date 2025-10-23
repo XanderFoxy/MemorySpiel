@@ -48,6 +48,12 @@
 
             <section class="memory-grid"></section>
 
+            <div id="permanent-gallery-container" class="permanent-gallery-container">
+                <h2>Deine Favoriten-Galerie</h2>
+                <div id="permanent-gallery">
+                    </div>
+            </div>
+
             <div id="match-success-overlay" class="overlay">
                 <div class="overlay-content">
                     <h2>Volltreffer!</h2>
@@ -57,10 +63,16 @@
 
             <div id="gallery-overlay" class="overlay">
                 <div class="overlay-content">
-                    <h2>Glückwunsch! Deine Galerie</h2>
-                    <div id="gallery-images">
-                    </div>
+                    <h2>Glückwunsch!</h2>
+                    <p>Du hast alle Paare gefunden!</p>
                     <button id="close-gallery">Neues Spiel</button>
+                </div>
+            </div>
+
+            <div id="image-detail-overlay" class="overlay">
+                <div class="detail-content">
+                    <img id="detail-image" src="" alt="Große Ansicht des Bildes">
+                    <button id="close-detail">Schließen</button>
                 </div>
             </div>
 
