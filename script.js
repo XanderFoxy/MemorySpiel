@@ -18,11 +18,11 @@ let secondCard = null;
 let lockBoard = false;
 let moves = 0;
 let pairsFound = 0;
-const maxPairs = 12; // Feste Größe für ein klassisches 6x4 Memory
+// Festgelegt auf 12 Paare für ein 4x6 Grid, wie gewünscht
+const MAX_PAIRS = 12; 
 let matchedImages = []; 
-const GRID_COLUMNS = 6; // 6x4 Grid
-const CARDS_TO_SELECT = 12; // 12 Paare
 
+// WICHTIG: Deine vorhandenen Pfade und BASE_URL bleiben UNVERÄNDERT.
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
 
 function shuffleArray(array) {
@@ -32,64 +32,75 @@ function shuffleArray(array) {
     }
 }
 
-// --- FESTE BILDER FÜR DEN ORDER 'InItalien' (zur Auswahl von 12) ---
+// Diese Funktion wählt zufällig eine bestimmte Anzahl von Pfaden aus.
+// maxPossibleImages wird nur für die zufällig nummerierten Ordner verwendet.
+function selectRandomImagePaths(allPaths, count) {
+    let shuffled = [...allPaths];
+    shuffleArray(shuffled);
+    return shuffled.slice(0, count);
+}
+
+// Die maximale Anzahl potenzieller Bilder pro Themenordner (BabyFox, ThroughTheYears) ist 20.
+function generateNumberedPaths(folderName, maxPossibleImages = 20) {
+    let allNumbers = [];
+    for (let i = 1; i <= maxPossibleImages; i++) {
+        allNumbers.push(`${folderName}/${i}.jpg`);
+    }
+    return allNumbers;
+}
+
+// --- NEUE, FESTE BILDER FÜR DEN ORDER 'InItalien' (Deine Pfade) ---
 const IN_ITALIEN_FILES = [
-    'InItalien/Al ven7.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg',
-    'InItalien/IMG_6917.jpeg', 'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg',
-    'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg', 'InItalien/IMG_9369.jpeg',
-    'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
-    'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg',
-    'InItalien/IMG_9597.jpeg', 'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg',
+    'InItalien/Al ven7.jpeg',
+    'InItalien/IMG_0051.jpeg',
+    'InItalien/IMG_0312.jpeg',
+    'InItalien/IMG_6917.jpeg',
+    'InItalien/IMG_8499.jpeg',
+    'InItalien/IMG_9287.jpeg',
+    'InItalien/IMG_9332.jpeg',
+    'InItalien/IMG_9352.jpeg',
+    'InItalien/IMG_9369.jpeg',
+    'InItalien/IMG_9370.jpeg',
+    'InItalien/IMG_9470.jpeg',
+    'InItalien/IMG_9480.jpeg',
+    'InItalien/IMG_9592.jpeg',
+    'InItalien/IMG_9593.jpeg',
+    'InItalien/IMG_9594.jpeg',
+    'InItalien/IMG_9597.jpeg',
+    'InItalien/IMG_9598.jpeg',
+    'InItalien/IMG_9599.jpeg',
     'InItalien/QgNsMtTA.jpeg'
 ];
 // --- ENDE NEUE BILDER ---
 
-// Generische Funktion zur Auswahl einer festen Anzahl an Bildpfaden
-function getSelectedImagePaths(folderName, allPossibleImages) {
-    // Wenn es feste Pfade gibt (InItalien), nutze diese als Basis, ansonsten generiere Pfade
-    let possiblePaths = allPossibleImages ? allPossibleImages.slice() : [];
-
-    if (!allPossibleImages) {
-         // Generiert Pfade, falls keine feste Liste existiert (für BabyFox, ThroughTheYears, Gemixt)
-        const maxPossibleImages = 20; 
-        for (let i = 1; i <= maxPossibleImages; i++) {
-            possiblePaths.push(`${folderName}/${i}.jpg`);
-        }
-    }
-    
-    shuffleArray(possiblePaths);
-    // Wählt immer 12 zufällige Pfade aus der verfügbaren Liste
-    return possiblePaths.slice(0, CARDS_TO_SELECT);
-}
-
 const gameConfigs = {
     'InItalien': {
-        folderName: 'InItalien', 
-        allImages: IN_ITALIEN_FILES 
+        allImagePaths: IN_ITALIEN_FILES, // 19 Bilder
     },
     'BabyFox': { 
-        folderName: 'BabyFox'
+        allImagePaths: generateNumberedPaths('BabyFox', 20), // 20 Bilder
     },
     'ThroughTheYears': { 
-        folderName: 'ThroughTheYears'
+        allImagePaths: generateNumberedPaths('ThroughTheYears', 20), // 20 Bilder
     },
     'Gemixt': { 
-        folderName: 'Gemixt' // Wird in setupGame separat behandelt
+        // Für Gemixt werden die Pfade in setupGame gemischt
     }
 };
 
-let currentConfig = gameConfigs['InItalien']; // Startet mit InItalien
+let currentConfig = gameConfigs['InItalien']; 
 
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
         const theme = e.target.dataset.theme;
         currentConfig = gameConfigs[theme];
         
-        // Button-Highlighting
         themeButtons.forEach(btn => {
-            btn.classList.remove('active-theme');
+            btn.style.backgroundColor = 'var(--card-back-color)'; // Dunkles Rot
+            btn.style.color = 'white';
         });
-        e.target.classList.add('active-theme');
+        e.target.style.backgroundColor = 'var(--secondary-color)'; // Gelb
+        e.target.style.color = 'var(--primary-color)'; // Dunkles Lila
         
         setupGame();
     });
@@ -103,40 +114,42 @@ function setupGame() {
     lockBoard = false;
     moves = 0;
     pairsFound = 0;
-    matchedImages = [];
     
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Setzt das Grid fest auf 6 Spalten für 24 Karten (6x4)
-    memoryGrid.style.gridTemplateColumns = `repeat(${GRID_COLUMNS}, 1fr)`;
+    // Setze das Grid immer auf 4 Reihen und 6 Spalten für 24 Karten
+    memoryGrid.style.gridTemplateColumns = `repeat(6, 1fr)`;
+    memoryGrid.style.maxWidth = '680px'; // Feste Breite für das Grid 
 
-    let selectedPaths;
+    let selectedPaths = [];
     
-    if (currentConfig.folderName === 'Gemixt') {
-        const otherFolders = ['BabyFox', 'ThroughTheYears', 'InItalien']; 
+    if (currentConfig.allImagePaths) {
+        // Wählt 12 zufällige Pfade aus den verfügbaren Bildern des Themas
+        selectedPaths = selectRandomImagePaths(currentConfig.allImagePaths, MAX_PAIRS);
+    } else if (currentConfig.allImagePaths === undefined && currentConfig.name === 'Gemixt') {
+        // Gemixtes Thema
+        const otherFolders = ['BabyFox', 'ThroughTheYears', 'InItalien'];
         let allPaths = [];
         
-        // Sammelt alle möglichen Pfade aus allen Ordnern
-        otherFolders.forEach(folder => {
-            const possibleImages = (folder === 'InItalien') ? IN_ITALIEN_FILES : null;
-            const paths = getSelectedImagePaths(folder, possibleImages);
-            allPaths = allPaths.concat(paths);
+        // Sammle alle möglichen Pfade aus allen Themen (mindestens 19+20+20 = 59)
+        otherFolders.forEach(folderName => {
+             const config = gameConfigs[folderName];
+             if (config) {
+                 allPaths = allPaths.concat(config.allImagePaths);
+             }
         });
 
-        // Wählt 12 zufällige, gemischte Pfade aus allen gesammelten Pfaden
-        shuffleArray(allPaths);
-        selectedPaths = allPaths.slice(0, CARDS_TO_SELECT);
-    } else {
-        // Wählt 12 zufällige Pfade aus dem aktuellen Thema
-        selectedPaths = getSelectedImagePaths(currentConfig.folderName, currentConfig.allImages);
+        // Wähle 12 zufällige Pfade aus dem großen Pool
+        selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
     }
-
+    
     let gameCardValues = []; 
+    // Erstelle die Paare
     selectedPaths.forEach(fullPath => {
-        gameCardValues.push(fullPath, fullPath); // Jedes Bild doppelt
+        gameCardValues.push(fullPath, fullPath); 
     });
-
+    
     shuffleArray(gameCardValues);
 
     gameCardValues.forEach(fullPath => { 
@@ -187,7 +200,8 @@ function disableCards() {
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     resetBoard();
-    if (pairsFound === maxPairs) {
+    // Prüfe gegen die feste MAX_PAIRS
+    if (pairsFound === MAX_PAIRS) { 
         setTimeout(gameOver, 1000); 
     }
 }
@@ -226,6 +240,8 @@ function gameOver() {
         galleryImagesContainer.appendChild(img);
     });
     galleryOverlay.classList.add('active');
+    // Leere die Galerie für das nächste Spiel, wenn es neu gestartet wird
+    matchedImages = []; 
 }
 
 closeGalleryButton.addEventListener('click', () => {
@@ -234,10 +250,11 @@ closeGalleryButton.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Setzt das initiale Theme-Highlight
+    // Initiales Styling für den Start-Button
     const initialButton = document.querySelector('.theme-button[data-theme="InItalien"]');
     if (initialButton) {
-        initialButton.classList.add('active-theme');
+        initialButton.style.backgroundColor = 'var(--secondary-color)';
+        initialButton.style.color = 'var(--primary-color)';
     }
     setupGame();
 });
