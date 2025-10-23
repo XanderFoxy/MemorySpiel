@@ -1,5 +1,5 @@
 :root {
-    /* Farben beibehalten, aber dunkleren Hintergrund für Abhebung ändern */
+    /* Farben beibehalten */
     --primary-color: #5d54a4; /* Dunkles Lila */
     --secondary-color: #f7b731; /* Gelb-Orange (Golden) */
     
@@ -9,7 +9,7 @@
     
     /* Layout-Farben */
     --text-color: #333;
-    --bg-dark-main: #3d344a; /* Dunkles Lila/Grau für Samt-Effekt */
+    --bg-dark-main: #3d344a; /* Basis für Samt */
     --bg-light: #f0f4f8; 
     --bg-white: #ffffff;
     
@@ -28,7 +28,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Hintergrund leicht geändert, um weißen Rahmen hervorzuheben */
+    /* Hintergrund leicht geändert, damit weißer Rahmen abhebt */
     background: linear-gradient(135deg, #d3e1f1, #c1ceda); 
     color: var(--text-color);
     min-height: 100vh;
@@ -36,22 +36,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-}
-
-.back-link {
-    /* Stil bleibt gleich, ist edel genug */
-    position: fixed; 
-    top: 20px;
-    left: 20px;
-    text-decoration: none;
-    color: var(--primary-color);
-    font-size: 1.1rem;
-    padding: 8px 15px;
-    border-radius: 25px;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s, transform 0.2s;
-    z-index: 100;
 }
 
 .game-container {
@@ -78,23 +62,10 @@ body {
     border-right: 3px solid var(--secondary-color);
 }
 
-.sidebar h2 {
-    margin-bottom: 25px;
-    border-bottom: 2px solid var(--secondary-color);
-    padding-bottom: 10px;
-    font-size: 1.5rem;
-}
-
-.theme-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* Button-Styling angepasst für Rot/Gelb-Äquivalenz */
+/* Anpassung Button-Styling (nicht blank-weiß) */
 .theme-button {
-    background-color: var(--card-main-color); /* Rot */
-    color: var(--bg-white);
+    background-color: var(--bg-white); /* Basis weiß (weniger Rot-Dominanz) */
+    color: var(--card-main-color); /* Text Rot */
     border: 3px solid var(--secondary-color); /* Golden */
     padding: 12px 20px;
     border-radius: 8px; 
@@ -113,284 +84,127 @@ body {
 
 .theme-button.active-theme {
     background-color: var(--secondary-color); /* Aktiv: Golden */
-    color: var(--card-main-color); /* Text: Rot */
+    color: var(--primary-color); /* Text: Lila */
     border: 3px solid var(--card-main-color); /* Rand: Rot */
     transform: scale(1.05);
 }
 
-.score-container {
+/* Favoriten-Sidebar-Sektion */
+.sidebar-favorites-container {
+    margin-bottom: 25px;
+}
+
+.permanent-gallery {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     padding: 10px 0;
+    gap: 10px;
+    border-top: 2px solid var(--secondary-color); 
+    border-bottom: 2px solid var(--secondary-color); 
+    height: 120px; /* Feste Höhe für Scroll-Leiste */
+    align-items: center;
 }
 
-/* Slider-Styling (Fuchs-Slider ist OK, nur die Thumb-Größe für Emojis */
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 35px; 
-    height: 35px; 
-    cursor: pointer;
-    background: var(--secondary-color);
-    border-radius: 50%;
-    border: 4px solid var(--card-main-color);
-    /* Fuchs-Emoji als Hintergrund */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='70'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
-    background-size: 100% 100%;
+.permanent-gallery .gallery-info {
+    font-size: 0.9em;
+    padding: 5px 0;
 }
 
-/* --- Hauptbereich und Gitter --- */
+/* --- Hauptbereich und Gitter (Samt-Effekt) --- */
 .main-content {
     flex-grow: 1;
     padding: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Samt-artiger, dunkler Hintergrund */
-    background: var(--bg-dark-main); 
     color: var(--bg-white); 
-    /* Samt-Effekt (feine Innenbeleuchtung) */
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1); 
+    
+    /* NEU: Samt-Effekt (Unregelmäßiger Verlauf/Lichtreflex) */
+    background: var(--bg-dark-main);
+    background-image: radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%),
+                      radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%),
+                      radial-gradient(circle at 50% 80%, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
 }
 
-.memory-grid {
-    display: grid;
-    gap: 12px;
-    padding: 15px;
-    background-color: #1a1a1a; 
-    border-radius: 15px;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
-    width: 100%;
-    max-width: 780px; 
-    /* Vermeidet Verschiebung beim Aufdecken */
-    min-height: 300px; 
+/* Verstecken von Elementen, die nur bei Bedarf erscheinen sollen */
+.hidden-by-default {
+    display: none !important;
 }
 
 /* --- Karten-Design --- */
-.memory-card {
-    position: relative;
-    width: 100%;
-    padding-bottom: 100%; 
-    transform-style: preserve-3d;
-    transition: transform 0.8s;
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); 
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-.front-face, .back-face {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 4px solid var(--card-border-color); 
-}
-
-.back-face {
-    background: var(--card-main-color);
-    font-size: 3rem;
-    color: white;
-    user-select: none;
-    z-index: 2; 
-    
-    /* NEU: Dünne, dezent edle Schraffur */
-    background-image: repeating-linear-gradient(
-      -45deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.1) 2px,
-      transparent 2px,
-      transparent 5px
-    );
-}
-
-.front-face {
-    transform: rotateY(180deg);
-    background-color: var(--bg-white);
-    padding: 3px; 
-    z-index: 1; 
-    overflow: hidden; 
-}
-
-.front-face img {
-    width: 100%;
-    height: 100%;
-    /* Wichtig: Ausschnitt aus der Mitte */
-    object-fit: cover; 
-    border-radius: 8px;
-}
-
-/* Zustand: Erste Karte ausgewählt (Warten) */
 .memory-card.waiting {
-    border: 4px solid var(--wait-color) !important;
-    box-shadow: 0 0 15px var(--wait-color);
+    /* Warte-Status orange leuchten */
+    box-shadow: 0 0 15px var(--wait-color), 0 0 30px var(--wait-color);
 }
 
-/* Zustand: Korrekter Treffer */
 .memory-card.match {
-    pointer-events: none;
-    /* Grüner Rahmen bleibt nach Treffer */
     border: 4px solid var(--match-color); 
-    /* Leuchteffekt beim Treffer */
     animation: pulseMatch 0.5s ease-in-out forwards;
-    box-shadow: 0 0 15px var(--match-color);
 }
 
-@keyframes pulseMatch {
-    0% { box-shadow: 0 0 0 0 rgba(56, 199, 56, 0.7); }
-    70% { box-shadow: 0 0 20px 5px rgba(56, 199, 56, 0); }
-    100% { box-shadow: 0 0 15px var(--match-color); }
+/* Warneffekt für Fehler (stärkeres Pulsieren) */
+@keyframes pulseError {
+    0% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0.7); }
+    50% { box-shadow: 0 0 25px 8px rgba(255, 56, 56, 0.5); }
+    100% { box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); } 
 }
 
-/* Zustand: Fehler */
 .memory-card.error {
     border: 4px solid var(--error-color);
-    /* Pulsierende Warnung für Fehler */
     animation: shakeError 0.5s, pulseError 0.5s ease-in-out;
 }
 
-@keyframes shakeError {
-    0%, 100% { transform: translate(0, 0); }
-    20%, 60% { transform: translate(-5px, 0); }
-    40%, 80% { transform: translate(5px, 0); }
-}
-
-@keyframes pulseError {
-    0% { box-shadow: 0 0 0 0 rgba(255, 56, 56, 0.7); }
-    70% { box-shadow: 0 0 20px 5px rgba(255, 56, 56, 0); }
-    100% { box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); } /* Standard Schatten wiederherstellen */
-}
-
-/* --- Galerien und Overlays --- */
-.permanent-gallery-container {
+/* --- Kartenaufsteller (Daily Matches) --- */
+.daily-matches-container {
     width: 100%;
     max-width: 900px;
-    padding: 15px;
+    padding: 15px 0;
     margin-top: 30px;
-    background-color: var(--bg-white); 
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    color: var(--primary-color);
     text-align: center;
 }
 
-#permanent-gallery {
-    /* Favoriten-Leiste */
-    display: flex; 
-    flex-wrap: nowrap; 
-    overflow-x: auto; 
-    padding: 10px 0;
-    gap: 15px;
-    border-top: 5px solid var(--primary-color); 
-    align-items: flex-end; 
-}
-
 .daily-matches-gallery {
-    /* NEU: Aufsteller für gefundene Bilder (Spiel aktuell) */
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
     padding: 10px 0;
     gap: 15px;
+    border-top: 5px solid var(--primary-color);
     border-bottom: 5px solid var(--primary-color);
-    margin-top: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    min-height: 100px; /* Für sichtbaren Aufsteller-Bereich */
+    align-items: center;
 }
 
+/* Galerie-Items (Thumbnails) */
 .gallery-item {
     position: relative;
-    width: 100px; 
-    height: 100px; 
+    width: 90px; /* etwas kleiner, um mehr Platz zu lassen */
+    height: 90px; 
     flex-shrink: 0; 
     border: 3px solid var(--secondary-color); 
     border-radius: 5px;
     cursor: pointer;
-    background-color: var(--bg-light);
+    background-color: var(--bg-white);
 }
 
-.gallery-item img {
-    width: 100%;
-    height: 100%;
-    /* Wichtig: Originale Proportionen */
-    object-fit: contain; 
-}
-
-.favorite-icon {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    color: white; 
-    text-shadow: 0 0 2px black;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.favorite-icon.active {
-    color: var(--card-main-color); /* Rot, wenn Favorit */
-}
-
-/* --- Overlays --- */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: none; 
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.overlay.active {
-    display: flex;
-}
-
-.overlay-content {
-    background-color: var(--bg-dark-main);
-    color: var(--bg-white);
-    padding: 30px;
-    border-radius: 15px;
-    border: 5px solid var(--secondary-color);
-    text-align: center;
-    max-width: 90%; 
-}
-
-/* NEU: Match Success Overlay als Modal im Main-Content-Bereich */
-.match-success-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: auto;
-    height: auto;
-    background: transparent;
-    z-index: 500;
-}
-
+/* --- Overlays (Match Success / Gallery) --- */
 .match-success-overlay .overlay-content {
     /* Mittelgroße Ansicht, ca. 3 Stapel hoch */
-    max-width: 400px; 
-    max-height: 400px;
-    overflow: hidden;
-    padding: 20px;
+    max-width: 350px; 
+    max-height: 350px;
+    /* Hintergrund transparent oder sehr dunkel, um nicht abzulenken */
+    background: rgba(0, 0, 0, 0.9);
+    border: 5px solid var(--secondary-color);
+    padding: 10px;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
 }
 
 .match-success-overlay #matched-image-preview {
     max-width: 100%;
     max-height: 100%;
-    /* Wichtig: Originale Proportionen, nicht gecroppt */
     object-fit: contain; 
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-/* Bild-Detail Overlay (Groß-Ansicht) */
-#image-detail-overlay .overlay-content {
-    /* Soll nicht größer sein als das Spielfeld/Main-Content-Bereich */
-    max-width: 800px; 
-    max-height: 80vh; 
 }
