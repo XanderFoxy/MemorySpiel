@@ -1,4 +1,4 @@
-const memoryGrid = document.querySelector('.memory-grid');
+Const memoryGrid = document.querySelector('.memory-grid');
 const statsMoves = document.getElementById('moves');
 const statsPairsFound = document.getElementById('pairs-found');
 const matchSuccessOverlay = document.getElementById('match-success-overlay');
@@ -18,7 +18,7 @@ let secondCard = null;
 let lockBoard = false;
 let moves = 0;
 let pairsFound = 0;
-let maxPairs = 0;
+let maxPairs = 12; // Feste Größe für das klassische 4x6 Memory
 let matchedImages = []; 
 
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
@@ -30,14 +30,19 @@ function shuffleArray(array) {
     }
 }
 
+// Wählt zufällig 'count' Pfade aus dem Array 'allPaths' aus.
+function selectRandomPaths(allPaths, count) {
+    shuffleArray(allPaths);
+    return allPaths.slice(0, count);
+}
+
 // Die maximale Anzahl potenzieller Bilder pro Themenordner (BabyFox, ThroughTheYears) ist 20.
 function getRandomImagePaths(folderName, maxPossibleImages = 20) {
     let allNumbers = [];
     for (let i = 1; i <= maxPossibleImages; i++) {
         allNumbers.push(`${folderName}/${i}.jpg`);
     }
-    shuffleArray(allNumbers);
-    return allNumbers.slice(0, 12);
+    return allNumbers;
 }
 
 // --- NEUE, FESTE BILDER FÜR DEN ORDER 'InItalien' ---
@@ -64,43 +69,42 @@ const IN_ITALIEN_FILES = [
 ];
 // --- ENDE NEUE BILDER ---
 
+// Alle Modi verwenden nun 12 Paare für ein 4x6 Grid
+const PAIR_COUNT = 12;
+
 const gameConfigs = {
     'InItalien': {
-        imageCount: IN_ITALIEN_FILES.length, // Nutzt alle 19 Bilder für das Spiel
-        gridColumns: 5, // Passt das Grid an (4x5 = 20, 4x4 = 16) -> 19 Paare geht nicht ganz auf, 
-        imagePaths: IN_ITALIEN_FILES 
+        type: 'fixed',
+        allImagePaths: IN_ITALIEN_FILES 
     },
     'BabyFox': { 
-        imageCount: 12, 
-        gridColumns: 6, 
-        folderName: 'BabyFox'
+        type: 'folder',
+        folderName: 'BabyFox',
+        maxPossibleImages: 20
     },
     'ThroughTheYears': { 
-        imageCount: 12, 
-        gridColumns: 6,
-        folderName: 'ThroughTheYears'
+        type: 'folder',
+        folderName: 'ThroughTheYears',
+        maxPossibleImages: 20
     },
     'Gemixt': { 
-        imageCount: 12, 
-        gridColumns: 6,
-        folderName: 'Gemixt'
+        type: 'mixed',
+        folders: ['BabyFox', 'ThroughTheYears']
     }
 };
 
 let currentConfig = gameConfigs['InItalien']; 
-maxPairs = currentConfig.imageCount; // Setzt maxPairs korrekt für das Initialthema
 
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
         const theme = e.target.dataset.theme;
         currentConfig = gameConfigs[theme];
         
+        // Fügt das visuelle Feedback für den aktiven Button hinzu
         themeButtons.forEach(btn => {
-            btn.style.backgroundColor = '#4a4387';
-            btn.style.color = 'white';
+            btn.classList.remove('active-theme');
         });
-        e.target.style.backgroundColor = '#f7b731';
-        e.target.style.color = '#5d54a4';
+        e.target.classList.add('active-theme');
         
         setupGame();
     });
@@ -114,51 +118,35 @@ function setupGame() {
     lockBoard = false;
     moves = 0;
     pairsFound = 0;
-    
-    // Setzt maxPairs basierend auf der Konfiguration
-    if (currentConfig.imagePaths) {
-         // Für InItalien: alle Bilder verwenden
-        maxPairs = currentConfig.imagePaths.length;
-    } else {
-        // Für BabyFox, ThroughTheYears, Gemixt: 12 Paare
-        maxPairs = 12;
-    }
+    maxPairs = PAIR_COUNT; // Immer 12 Paare
+    matchedImages = [];
     
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Wenn die Anzahl der Paare ungerade ist (wie 19), verwenden wir das nächste gerade Grid (4x5=20)
-    let totalCards = maxPairs * 2;
-    let effectiveGridColumns = currentConfig.gridColumns;
-    if (totalCards > 24 && currentConfig.folderName === 'InItalien') {
-        // 19 Paare = 38 Karten. 6x4 Grid ist zu klein (24). Wir verwenden 6x7 = 42
-        effectiveGridColumns = 7; 
-        memoryGrid.style.gridTemplateColumns = `repeat(${effectiveGridColumns}, 1fr)`;
-    } else {
-        memoryGrid.style.gridTemplateColumns = `repeat(${effectiveGridColumns}, 1fr)`;
-    }
+    // Setzt das Grid fest auf 6 Spalten (4 Reihen x 6 Spalten = 24 Karten)
+    memoryGrid.style.gridTemplateColumns = `repeat(6, 1fr)`;
 
-
-    let selectedPaths;
+    let selectedPaths = [];
     
-    if (currentConfig.folderName === 'Gemixt') {
-        const otherFolders = ['BabyFox', 'ThroughTheYears']; // InItalien wird nicht gemischt
+    if (currentConfig.type === 'mixed') {
         let allPaths = [];
-        
-        otherFolders.forEach(folder => {
-            const paths = getRandomImagePaths(folder, 20); 
-            allPaths = allPaths.concat(paths);
+        // Sammelt alle möglichen Pfade aus BabyFox und ThroughTheYears
+        currentConfig.folders.forEach(folder => {
+            allPaths = allPaths.concat(getRandomImagePaths(folder, 20));
         });
 
-        shuffleArray(allPaths);
-        // Bei Gemixt immer 12 Paare
-        selectedPaths = allPaths.slice(0, 12);
-    } else if (currentConfig.imagePaths) {
-        // Feste Pfade (InItalien) - Alle verwenden
-        selectedPaths = currentConfig.imagePaths;
-    } else {
-        // Zufällige Pfade (BabyFox, ThroughTheYears) - 12 von 20
-        selectedPaths = getRandomImagePaths(currentConfig.folderName, 20);
+        // Wählt 12 Paare zufällig aus dem Pool
+        selectedPaths = selectRandomPaths(allPaths, PAIR_COUNT);
+
+    } else if (currentConfig.type === 'fixed') {
+        // Feste Pfade (InItalien) - Wählt 12 von den verfügbaren Bildern
+        selectedPaths = selectRandomPaths(currentConfig.allImagePaths, PAIR_COUNT);
+
+    } else if (currentConfig.type === 'folder') {
+        // Zufällige Pfade (BabyFox, ThroughTheYears) - Wählt 12 von 20
+        const allPaths = getRandomImagePaths(currentConfig.folderName, currentConfig.maxPossibleImages);
+        selectedPaths = selectRandomPaths(allPaths, PAIR_COUNT);
     }
 
     let gameCardValues = []; 
@@ -166,15 +154,6 @@ function setupGame() {
         gameCardValues.push(fullPath, fullPath); 
     });
     
-    // Hinzufügen einer Platzhalterkarte, falls die Anzahl ungerade ist (z.B. 19 Paare = 38 Karten)
-    if (gameCardValues.length % 2 !== 0) {
-        // Um ein ungerades Paar zu vermeiden, entfernen wir das letzte Bild, 
-        // oder Sie könnten eine dritte Karte für ein "Triple" hinzufügen,
-        // aber das würde die Spielmechanik ändern. Wir entfernen hier das letzte Bild.
-        gameCardValues.pop();
-        maxPairs = (gameCardValues.length / 2);
-    }
-
     shuffleArray(gameCardValues);
 
     gameCardValues.forEach(fullPath => { 
@@ -186,8 +165,8 @@ function setupGame() {
 
         card.innerHTML = `
             <img class="front-face" src="${imageURL}" alt="Memory Bild">
-            <span class="back-face"><i class="fas fa-question-circle"></i></span>
-        `;
+            <span class="back-face">🦊</span> 
+        `; // Fuchs-Emoji auf der Rückseite
 
         card.addEventListener('click', flipCard);
         memoryGrid.appendChild(card);
@@ -274,8 +253,7 @@ closeGalleryButton.addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const initialButton = document.querySelector('.theme-button[data-theme="InItalien"]');
     if (initialButton) {
-        initialButton.style.backgroundColor = '#f7b731';
-        initialButton.style.color = '#5d54a4';
+        initialButton.classList.add('active-theme');
     }
     setupGame();
 });
