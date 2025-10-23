@@ -36,6 +36,16 @@
                 <button class="theme-button" data-theme="ThroughTheYears">Through The Years</button>
                 <button class="theme-button active-theme" data-theme="Gemixt">Gemixt</button>
             </nav>
+
+            <hr>
+            <h2>Dein Score</h2>
+            <div class="score-container">
+                <span id="daily-score">Heute: 0 Spiele</span>
+                <button id="show-history-btn" class="theme-button" style="margin-top: 10px;">
+                    <i class="fas fa-calendar-alt"></i> Verlauf
+                </button>
+            </div>
+            
         </aside>
 
         <main class="main-content">
@@ -49,32 +59,42 @@
             <section class="memory-grid"></section>
 
             <div id="permanent-gallery-container" class="permanent-gallery-container">
-                <h2>Deine Favoriten</h2>
+                <h2>Deine Favoriten & Gefundene Bilder</h2>
                 <div id="permanent-gallery">
-                    <p style="color: var(--primary-color); margin: 10px 0;">Markiere Bilder als Favoriten (❤️), um sie hier dauerhaft zu speichern.</p>
+                    <p class="gallery-info" style="color: var(--primary-color); margin: 10px 0;">Markiere Bilder als Favoriten (❤️), um sie hier dauerhaft zu speichern.</p>
                 </div>
+                <div id="daily-matches-gallery" class="daily-matches-gallery">
+                    </div>
             </div>
             
-            <div id="match-success-overlay" class="overlay">
+            <div id="match-success-overlay" class="match-success-overlay overlay-modal">
                 <div class="overlay-content">
                     <h2>Volltreffer!</h2>
                     <img id="matched-image-preview" src="" alt="Gefundenes Bild">
                 </div>
             </div>
-
+            
+            <div id="history-overlay" class="overlay">
+                <div class="overlay-content detail-content" style="max-width: 800px;">
+                    <h2>Dein Spielverlauf</h2>
+                    <div id="history-list"></div>
+                    <button id="close-history" class="theme-button">Schließen</button>
+                </div>
+            </div>
+            
             <div id="gallery-overlay" class="overlay">
                 <div class="overlay-content">
                     <h2>Glückwunsch! Alle Paare gefunden.</h2>
                     <div id="gallery-images">
                     </div>
-                    <button id="close-gallery">Neues Spiel</button>
+                    <button id="close-gallery" class="theme-button">Neues Spiel</button>
                 </div>
             </div>
 
             <div id="image-detail-overlay" class="overlay">
-                <div class="overlay-content detail-content">
-                    <img id="detail-image" src="" alt="Große Ansicht des Bildes">
-                    <button id="close-detail">Schließen</button>
+                <div class="overlay-content detail-content" style="max-width: 900px; max-height: 80vh;">
+                    <img id="detail-image" src="" alt="Große Ansicht des Bildes" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <button id="close-detail" class="theme-button">Schließen</button>
                 </div>
             </div>
 
