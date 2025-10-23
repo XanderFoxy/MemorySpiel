@@ -6,6 +6,7 @@ const matchedImagePreview = document.getElementById('matched-image-preview');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
+const difficultyButtons = document.querySelectorAll('.difficulty-button'); // NEU: Schwierigkeitsbuttons
 const galleryImagesContainer = document.getElementById('gallery-images');
 
 const soundMatch = document.getElementById('sound-match');
@@ -18,9 +19,16 @@ let secondCard = null;
 let lockBoard = false;
 let moves = 0;
 let pairsFound = 0;
-// Festgelegt auf 12 Paare für ein 4x6 Grid, wie gewünscht
-const MAX_PAIRS = 12; 
 let matchedImages = []; 
+
+// NEU: Schwierigkeitskonfiguration
+const difficultyConfigs = {
+    'easy': { pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '440px' }, // 4x4 Grid
+    'medium': { pairs: 12, columns: 6, cardsTotal: 24, gridMaxW: '680px' }, // 4x6 Grid
+    'hard': { pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '680px' }  // 6x6 Grid
+};
+
+let currentDifficulty = difficultyConfigs['medium']; // Standard: Mittel
 
 // WICHTIG: Deine vorhandenen Pfade und BASE_URL bleiben UNVERÄNDERT.
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
@@ -33,14 +41,19 @@ function shuffleArray(array) {
 }
 
 // Diese Funktion wählt zufällig eine bestimmte Anzahl von Pfaden aus.
-// maxPossibleImages wird nur für die zufällig nummerierten Ordner verwendet.
 function selectRandomImagePaths(allPaths, count) {
+    // Stellen Sie sicher, dass genügend Bilder vorhanden sind
+    if (allPaths.length < count) {
+        console.error(`Nicht genug Bilder (${allPaths.length}) für ${count} Paare verfügbar!`);
+        // Im Fehlerfall so viele Paare wie möglich verwenden
+        count = allPaths.length;
+    }
     let shuffled = [...allPaths];
     shuffleArray(shuffled);
     return shuffled.slice(0, count);
 }
 
-// Die maximale Anzahl potenzieller Bilder pro Themenordner (BabyFox, ThroughTheYears) ist 20.
+// Die maximale Anzahl potenzieller Bilder pro Themenordner ist 20.
 function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     let allNumbers = [];
     for (let i = 1; i <= maxPossibleImages; i++) {
@@ -69,38 +82,53 @@ const IN_ITALIEN_FILES = [
     'InItalien/IMG_9597.jpeg',
     'InItalien/IMG_9598.jpeg',
     'InItalien/IMG_9599.jpeg',
-    'InItalien/QgNsMtTA.jpeg'
+    'InItalien/QgNsMtTA.jpeg' // Total 19 Bilder
 ];
 // --- ENDE NEUE BILDER ---
 
 const gameConfigs = {
     'InItalien': {
-        allImagePaths: IN_ITALIEN_FILES, // 19 Bilder
+        allImagePaths: IN_ITALIEN_FILES, 
+        name: 'InItalien'
     },
     'BabyFox': { 
-        allImagePaths: generateNumberedPaths('BabyFox', 20), // 20 Bilder
+        allImagePaths: generateNumberedPaths('BabyFox', 20),
+        name: 'BabyFox'
     },
     'ThroughTheYears': { 
-        allImagePaths: generateNumberedPaths('ThroughTheYears', 20), // 20 Bilder
+        allImagePaths: generateNumberedPaths('ThroughTheYears', 20),
+        name: 'ThroughTheYears'
     },
     'Gemixt': { 
-        // Für Gemixt werden die Pfade in setupGame gemischt
+        // wird unten gefüllt
+        name: 'Gemixt'
     }
 };
 
-let currentConfig = gameConfigs['InItalien']; 
+let currentThemeConfig = gameConfigs['InItalien']; 
 
+
+// Event Listener für Schwierigkeit
+difficultyButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+        const difficulty = e.target.dataset.difficulty;
+        currentDifficulty = difficultyConfigs[difficulty];
+        
+        difficultyButtons.forEach(btn => btn.classList.remove('active-difficulty'));
+        e.target.classList.add('active-difficulty');
+        
+        setupGame();
+    });
+});
+
+// Event Listener für Thema
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
         const theme = e.target.dataset.theme;
-        currentConfig = gameConfigs[theme];
+        currentThemeConfig = gameConfigs[theme];
         
-        themeButtons.forEach(btn => {
-            btn.style.backgroundColor = 'var(--card-back-color)'; // Dunkles Rot
-            btn.style.color = 'white';
-        });
-        e.target.style.backgroundColor = 'var(--secondary-color)'; // Gelb
-        e.target.style.color = 'var(--primary-color)'; // Dunkles Lila
+        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
+        e.target.classList.add('active-theme');
         
         setupGame();
     });
@@ -115,35 +143,37 @@ function setupGame() {
     moves = 0;
     pairsFound = 0;
     
+    // Setze maxPairs basierend auf der gewählten Schwierigkeit
+    const MAX_PAIRS = currentDifficulty.pairs; 
+    
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Setze das Grid immer auf 4 Reihen und 6 Spalten für 24 Karten
-    memoryGrid.style.gridTemplateColumns = `repeat(6, 1fr)`;
-    memoryGrid.style.maxWidth = '680px'; // Feste Breite für das Grid 
+    // Setze das Grid basierend auf der Schwierigkeit
+    memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
+    memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
-    let selectedPaths = [];
+    let selectedPaths;
     
-    if (currentConfig.allImagePaths) {
-        // Wählt 12 zufällige Pfade aus den verfügbaren Bildern des Themas
-        selectedPaths = selectRandomImagePaths(currentConfig.allImagePaths, MAX_PAIRS);
-    } else if (currentConfig.allImagePaths === undefined && currentConfig.name === 'Gemixt') {
-        // Gemixtes Thema
+    if (currentThemeConfig.name === 'Gemixt') {
         const otherFolders = ['BabyFox', 'ThroughTheYears', 'InItalien'];
         let allPaths = [];
         
-        // Sammle alle möglichen Pfade aus allen Themen (mindestens 19+20+20 = 59)
         otherFolders.forEach(folderName => {
              const config = gameConfigs[folderName];
-             if (config) {
+             if (config && config.allImagePaths) {
                  allPaths = allPaths.concat(config.allImagePaths);
              }
         });
 
-        // Wähle 12 zufällige Pfade aus dem großen Pool
+        // Wähle die benötigte Anzahl zufälliger Paare aus dem großen Pool
         selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
+
+    } else if (currentThemeConfig.allImagePaths) {
+        // Wählt die benötigte Anzahl zufälliger Paare aus dem aktuellen Themen-Pool
+        selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
     }
-    
+
     let gameCardValues = []; 
     // Erstelle die Paare
     selectedPaths.forEach(fullPath => {
@@ -200,8 +230,9 @@ function disableCards() {
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     resetBoard();
-    // Prüfe gegen die feste MAX_PAIRS
-    if (pairsFound === MAX_PAIRS) { 
+    
+    // Prüfe gegen die aktuelle MAX_PAIRS der Schwierigkeit
+    if (pairsFound === currentDifficulty.pairs) { 
         setTimeout(gameOver, 1000); 
     }
 }
@@ -240,7 +271,6 @@ function gameOver() {
         galleryImagesContainer.appendChild(img);
     });
     galleryOverlay.classList.add('active');
-    // Leere die Galerie für das nächste Spiel, wenn es neu gestartet wird
     matchedImages = []; 
 }
 
@@ -250,11 +280,16 @@ closeGalleryButton.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initiales Styling für den Start-Button
-    const initialButton = document.querySelector('.theme-button[data-theme="InItalien"]');
-    if (initialButton) {
-        initialButton.style.backgroundColor = 'var(--secondary-color)';
-        initialButton.style.color = 'var(--primary-color)';
+    // Initiales Styling für den Start-Button (Thema)
+    const initialThemeButton = document.querySelector('.theme-button[data-theme="InItalien"]');
+    if (initialThemeButton) {
+        initialThemeButton.classList.add('active-theme');
     }
+    // Initiales Styling für den Start-Button (Schwierigkeit)
+    const initialDifficultyButton = document.querySelector('.difficulty-button[data-difficulty="medium"]');
+     if (initialDifficultyButton) {
+        initialDifficultyButton.classList.add('active-difficulty');
+    }
+
     setupGame();
 });
