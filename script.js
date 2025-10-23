@@ -23,21 +23,19 @@ let moves = 0;
 let pairsFound = 0;
 let matchedImages = []; 
 
-// KORREKTUR: Schwierigkeitskonfiguration mit QUADRATISCHEN Grids
+// KORREKTUR: Schwierigkeitskonfiguration mit nur ZWEI quadratischen Grids
 const difficultyConfigs = {
     // 4x4 Grid
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
     // 6x6 Grid
-    '2': { name: 'Mittel', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' }, 
-    // 8x8 Grid
-    '3': { name: 'Schwer', pairs: 32, columns: 8, cardsTotal: 64, gridMaxW: '1040px' }  
+    '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
 
-// ... (shuffleArray, selectRandomImagePaths, generateNumberedPaths, IN_ITALIEN_FILES, gameConfigs bleiben unverändert) ...
+// ... (Hilfsfunktionen bleiben unverändert) ...
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -83,7 +81,10 @@ let currentThemeConfig = gameConfigs['Gemixt'];
 // Event Listener für Slider (Schwierigkeit)
 difficultySlider.addEventListener('input', (e) => {
     currentDifficulty = difficultyConfigs[e.target.value];
-    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
+    // Bei Stufe 2, zeige den Text für "Schwer"
+    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
+    const pairs = e.target.value === '2' ? 18 : 8;
+    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
 });
 
 difficultySlider.addEventListener('change', () => {
@@ -116,7 +117,7 @@ function setupGame() {
     pairsFound = 0;
     matchedImages = []; 
     
-    // KORREKTUR: Verstecke die Overlays am Anfang
+    // Verstecke die Overlays am Anfang
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
@@ -127,7 +128,6 @@ function setupGame() {
 
     // Setze das Grid basierend auf der Schwierigkeit
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
-    // Das CSS nutzt die Eigenschaft, wenn das Grid zu groß ist, aber für Übersichtlichkeit hier
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
     let selectedPaths = [];
@@ -180,11 +180,13 @@ function setupGame() {
 }
 
 /**
- * KORREKTUR: Kernlogik für das Aufdecken der Karten
+ * KORREKTUR DER SPIEL-LOGIK: Karten werden jetzt aufgedeckt.
  */
 function flipCard() {
-    // KORREKTUR: Überprüfen, ob die Karte bereits ein Match ist ODER das Brett gesperrt ist
-    if (lockBoard || this === firstCard || this.classList.contains('match')) return;
+    // Wenn das Brett gesperrt ist, die Karte bereits die erste ist, oder bereits gematcht, tue nichts.
+    if (lockBoard) return;
+    if (this === firstCard) return;
+    if (this.classList.contains('match')) return;
     
     this.classList.add('flip');
 
@@ -197,8 +199,8 @@ function flipCard() {
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
     
-    // Sperre das Board kurz, während wir vergleichen
-    lockBoard = true;
+    // WICHTIG: Board sperren, bevor verglichen wird
+    lockBoard = true; 
     
     checkForMatch();
 }
@@ -224,7 +226,7 @@ function disableCards() {
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
-    resetBoard(true); // Board sofort freigeben nach Match
+    resetBoard(); // Board freigeben und Karten-Referenzen zurücksetzen
     
     if (pairsFound === currentDifficulty.pairs) { 
         setTimeout(gameOver, 1000); 
@@ -239,15 +241,12 @@ function unflipCards() {
     setTimeout(() => {
         firstCard.classList.remove('flip', 'error');
         secondCard.classList.remove('flip', 'error');
-        resetBoard(true); // Board nach 1 Sekunde freigeben
+        resetBoard(); // Board nach 1 Sekunde freigeben und Karten-Referenzen zurücksetzen
     }, 1000);
 }
 
-function resetBoard(releaseLock = true) {
-    [firstCard, secondCard] = [null, null];
-    if(releaseLock) {
-        lockBoard = false;
-    }
+function resetBoard() {
+    [firstCard, secondCard, lockBoard] = [null, null, false];
 }
 
 function showMatchSuccess(imageSrc) {
@@ -262,12 +261,10 @@ function gameOver() {
     soundWin.play();
     galleryImagesContainer.innerHTML = '';
     
-    // KORREKTUR: Bilder in der Galerie erhalten feste, kleine Größe
     matchedImages.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
         img.alt = 'Gefundenes Bild';
-        // Das Styling wird im CSS erledigt (feste 100x100px)
         galleryImagesContainer.appendChild(img);
     });
     galleryOverlay.classList.add('active');
