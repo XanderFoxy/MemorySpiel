@@ -30,30 +30,46 @@ let pairsFound = 0;
 let matchedImages = []; 
 
 const difficultyConfigs = {
-    // KORREKTUR: Anzeige ist Paare (8 und 18)
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
     '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
-
 const BASE_URL = 'Bilder/'; 
 
-// --- Hilfsfunktionen für Arrays und Pfade bleiben gleich ---
+// --- Datenstrukturen und Hilfsfunktionen ---
 
-// Ihre Bildpfad-Definitionen bleiben
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function selectRandomImagePaths(allPaths, count) {
+    if (allPaths.length < count) {
+        count = allPaths.length;
+    }
+    let shuffled = [...allPaths];
+    shuffleArray(shuffled);
+    return shuffled.slice(0, count);
+}
+
+function generateNumberedPaths(folderName, maxPossibleImages = 20) {
+    let allNumbers = [];
+    for (let i = 1; i <= maxPossibleImages; i++) {
+        allNumbers.push(`${folderName}/${i}.jpg`);
+    }
+    return allNumbers;
+}
+
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
     'BabyFox/IMG_0688.jpeg', 
     'BabyFox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
     'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
-    // Hier können noch mehr Dateien eingefügt werden, wenn nötig.
-    ...(() => {
-        let paths = [];
-        for (let i = 1; i <= 20; i++) paths.push(`BabyFox/${i}.jpg`);
-        return paths;
-    })() // Anonyme Funktion zur Generierung von 1.jpg bis 20.jpg
+    ...generateNumberedPaths('BabyFox', 20)
 ];
 
 const IN_ITALIEN_FILES = [
@@ -103,7 +119,6 @@ function createGalleryItem(imagePath, isFavorite = false) {
     img.alt = 'Gefundenes Bild';
     item.appendChild(img);
 
-    // Herz-Icon als Markierungsfunktion (Favorit)
     const icon = document.createElement('span');
     icon.classList.add('favorite-icon', 'fas', 'fa-heart');
     if (isFavorite) {
@@ -155,7 +170,6 @@ function loadPermanentGallery() {
     
     if (favorites.length > 0) {
         favorites.forEach(path => {
-            // isFavorite ist true, da es aus der Favoritenliste kommt
             permanentGallery.appendChild(createGalleryItem(path, true)); 
         });
     } else {
@@ -170,7 +184,6 @@ function loadPermanentGallery() {
 
 difficultySlider.addEventListener('input', (e) => {
     currentDifficulty = difficultyConfigs[e.target.value];
-    // KORREKTUR: Anzeige von 8 Paaren oder 18 Paaren
     const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
     const pairs = e.target.value === '2' ? 18 : 8;
     difficultyDescription.textContent = `${name} (${pairs} Paare)`;
@@ -218,11 +231,11 @@ function setupGame() {
     let selectedPaths = [];
     
     if (currentThemeConfig.name === 'Gemixt') {
-        const allPaths = [];
+        let allPaths = [];
         ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
              const config = gameConfigs[folderName];
              if (config && config.allImagePaths) {
-                 allPaths.push(...allPaths, ...config.allImagePaths);
+                 allPaths = allPaths.concat(config.allImagePaths);
              }
         });
         selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
@@ -232,7 +245,7 @@ function setupGame() {
     }
     
     if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden.`);
+        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade überprüfen.`);
         memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
         return;
     }
@@ -296,7 +309,6 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Wichtig: Karten bleiben offen
     firstCard.classList.add('match', 'flip'); 
     secondCard.classList.add('match', 'flip'); 
     
@@ -306,12 +318,11 @@ function disableCards() {
     const matchedImagePath = firstCard.dataset.path;
     const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
     
-    // Volltreffer anzeigen (ist im CSS nicht permanent sichtbar)
     showMatchSuccess(matchedImageSrc);
     
     setTimeout(() => {
         matchedImages.push(matchedImagePath);
-        loadPermanentGallery(); // Aktualisiert die Favoriten-Galerie
+        loadPermanentGallery(); 
     }, 1500); 
 
     resetBoard(); 
@@ -356,11 +367,11 @@ function gameOver() {
     matchedImages.forEach(path => {
         const item = createGalleryItem(path, favorites.includes(path));
         
-        // Entferne das Herz-Icon für die Glückwunsch-Ansicht, da es nur eine Vorschau ist
         const icon = item.querySelector('.favorite-icon');
         if(icon) {
             icon.remove();
         }
+        item.removeEventListener('click', item.onclick);
         galleryImagesContainer.appendChild(item);
     });
     galleryOverlay.classList.add('active');
@@ -373,7 +384,6 @@ closeGalleryButton.addEventListener('click', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // KORREKTUR: Korrekte Initialisierung der Schwierigkeitsanzeige
     const initialDifficulty = difficultyConfigs[difficultySlider.value];
     difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
     
