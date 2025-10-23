@@ -16,9 +16,9 @@ const soundError = document.getElementById('sound-error');
 const soundWin = document.getElementById('sound-win');
 
 let cards = [];
-let hasFlippedCard = false; // Wird verwendet, um zu prüfen, ob die erste Karte aufgedeckt wurde
-let lockBoard = false; // Steuert, ob Klicks ignoriert werden
-let firstCard, secondCard; // Speichert die Referenzen auf die aktuell aufgedeckten Karten
+let hasFlippedCard = false; 
+let lockBoard = false; 
+let firstCard, secondCard; 
 let moves = 0;
 let pairsFound = 0;
 let matchedImages = []; 
@@ -43,29 +43,35 @@ function shuffleArray(array) {
 }
 
 function selectRandomImagePaths(allPaths, count) {
+    // KORREKTUR: Die Logik zur Auswahl der zufälligen Bilder bleibt, 
+    // stellt aber sicher, dass nur die benötigte Anzahl Paare (count) ausgewählt wird,
+    // auch wenn mehr Bilder im Ordner sind.
     if (allPaths.length < count) {
         console.warn(`Nicht genug Bilder (${allPaths.length}) für ${count} Paare verfügbar. Reduziere auf ${allPaths.length} Paare.`);
         count = allPaths.length;
     }
     let shuffled = [...allPaths];
     shuffleArray(shuffled);
+    // WICHTIG: Hier werden die exakt benötigten 8 Paare (oder 18) ausgewählt.
     return shuffled.slice(0, count);
 }
 
 function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     let allNumbers = [];
     for (let i = 1; i <= maxPossibleImages; i++) {
+        // Annahme: Bilder sind als 1.jpg, 2.jpg etc. gespeichert
         allNumbers.push(`${folderName}/${i}.jpg`);
     }
     return allNumbers;
 }
 
+// Hier sind die Dateinamen fixiert, um Case-Sensitivity-Probleme zu vermeiden.
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
     'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
     'InItalien/IMG_9369.jpeg', 'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
     'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
-    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg' 
+    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg' // 19 Bilder
 ];
 
 const gameConfigs = {
@@ -77,7 +83,7 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// Event Listener für Slider (Schwierigkeit)
+// ... (Slider- und Theme-Event-Listener bleiben unverändert) ...
 difficultySlider.addEventListener('input', (e) => {
     currentDifficulty = difficultyConfigs[e.target.value];
     const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
@@ -89,8 +95,6 @@ difficultySlider.addEventListener('change', () => {
     setupGame(); 
 });
 
-
-// Event Listener für Thema
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
         const theme = e.target.dataset.theme;
@@ -115,7 +119,6 @@ function setupGame() {
     pairsFound = 0;
     matchedImages = []; 
     
-    // Overlays initial verstecken
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
@@ -124,32 +127,30 @@ function setupGame() {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Setze das Grid basierend auf der Schwierigkeit
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
     let selectedPaths = [];
     
-    // Logik zur Auswahl der Bilder
     if (currentThemeConfig.name === 'Gemixt') {
-        const otherFolders = ['BabyFox', 'ThroughTheYears', 'InItalien'];
-        let allPaths = [];
-        
-        otherFolders.forEach(folderName => {
+        const allPaths = [];
+        // Sammle alle verfügbaren Bilder für "Gemixt"
+        ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
              const config = gameConfigs[folderName];
              if (config && config.allImagePaths) {
-                 allPaths = allPaths.concat(config.allImagePaths);
+                 allPaths.push(...config.allImagePaths);
              }
         });
         selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
 
     } else if (currentThemeConfig.allImagePaths) {
+        // WICHTIG: Wählt MAX_PAIRS Bilder aus der Liste (z.B. 8 von 19 für Leicht)
         selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
     }
     
-    if (selectedPaths.length === 0) {
-        console.error("Fehler: Konnte keine Bilder für das Spiel laden. Pfade prüfen!");
-        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center;">Fehler: Konnte keine Bilder laden. Bitte Thema prüfen.</p>';
+    if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
+        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade prüfen!`);
+        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
         return;
     }
 
@@ -172,33 +173,26 @@ function setupGame() {
             <span class="back-face">🦊</span>
         `;
         
-        // Die Karten werden erst nach dem DOM-Append mit dem Listener versehen, um Probleme zu vermeiden.
         memoryGrid.appendChild(card);
         cards.push(card);
     });
     
-    // Fügen Sie die Event-Listener HIER hinzu (nachdem alle Karten im DOM sind)
     cards.forEach(card => card.addEventListener('click', flipCard));
 }
 
-/**
- * Kernlogik für das Aufdecken der Karten (Robustere Version)
- */
 function flipCard() {
     if (lockBoard) return;
-    if (this === firstCard) return; // Verhindert Doppelklick auf dieselbe Karte
-    if (this.classList.contains('match')) return; // Verhindert Klick auf bereits gefundene Paare
+    if (this === firstCard) return; 
+    if (this.classList.contains('match')) return; 
 
     this.classList.add('flip');
 
     if (!hasFlippedCard) {
-        // Erster Klick
         hasFlippedCard = true;
         firstCard = this;
         return;
     }
     
-    // Zweiter Klick
     secondCard = this;
     moves++;
     statsMoves.textContent = `Züge: ${moves}`;
@@ -216,20 +210,24 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Markiere Karten als "match"
+    // KORREKTUR: Karten bleiben dauerhaft offen durch die Klasse 'match'
     firstCard.classList.add('match');
     secondCard.classList.add('match');
     
-    // Entferne die Event-Listener, um Klicks zu verhindern
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
     const matchedImageSrc = firstCard.querySelector('.front-face').src;
-    matchedImages.push(matchedImageSrc);
     
+    // Zeige das Overlay (Volltreffer)
     showMatchSuccess(matchedImageSrc);
     
-    resetBoard(); // Setze die Variablen zurück
+    // Füge das Bild zur Galerie hinzu, nachdem das Overlay weg ist (Simulation Animation)
+    setTimeout(() => {
+        matchedImages.push(matchedImageSrc);
+    }, 1500);
+    
+    resetBoard(); 
     
     if (pairsFound === currentDifficulty.pairs) { 
         setTimeout(gameOver, 1000); 
@@ -237,7 +235,7 @@ function disableCards() {
 }
 
 function unflipCards() {
-    lockBoard = true; // Sperre das Board während der Wartezeit
+    lockBoard = true; 
     soundError.play();
     firstCard.classList.add('error');
     secondCard.classList.add('error');
@@ -245,12 +243,11 @@ function unflipCards() {
     setTimeout(() => {
         firstCard.classList.remove('flip', 'error');
         secondCard.classList.remove('flip', 'error');
-        resetBoard(); // Setze Variablen zurück und entsperre das Board
+        resetBoard(); 
     }, 1000);
 }
 
 function resetBoard() {
-    // Setze die Logik-Variablen zurück und entsperre das Board
     [hasFlippedCard, lockBoard] = [false, false];
     [firstCard, secondCard] = [null, null];
 }
@@ -258,15 +255,17 @@ function resetBoard() {
 function showMatchSuccess(imageSrc) {
     matchedImagePreview.src = imageSrc;
     matchSuccessOverlay.classList.add('active');
+    // Das Overlay ist nach 1.5 Sekunden weg, damit das Bild kurz gezeigt wird
     setTimeout(() => {
         matchSuccessOverlay.classList.remove('active');
-    }, 1500);
+    }, 1500); 
 }
 
 function gameOver() {
     soundWin.play();
     galleryImagesContainer.innerHTML = '';
     
+    // Die Galerie wird aus den gesammelten matchedImages erstellt
     matchedImages.forEach(src => {
         const img = document.createElement('img');
         img.src = src;
@@ -295,6 +294,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentThemeConfig = gameConfigs['Gemixt'];
 
-    // Startet das Spiel
     setupGame();
 });
