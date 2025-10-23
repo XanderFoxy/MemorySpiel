@@ -30,7 +30,7 @@ function shuffleArray(array) {
     }
 }
 
-// Die maximale Anzahl potenzieller Bilder pro Themenordner ist nun 20.
+// Die maximale Anzahl potenzieller Bilder pro Themenordner (BabyFox, ThroughTheYears) ist 20.
 function getRandomImagePaths(folderName, maxPossibleImages = 20) {
     let allNumbers = [];
     for (let i = 1; i <= maxPossibleImages; i++) {
@@ -40,11 +40,35 @@ function getRandomImagePaths(folderName, maxPossibleImages = 20) {
     return allNumbers.slice(0, 12);
 }
 
+// --- NEUE, FESTE BILDER FÜR DEN ORDER 'InItalien' ---
+const IN_ITALIEN_FILES = [
+    'InItalien/Al ven7.jpeg',
+    'InItalien/IMG_0051.jpeg',
+    'InItalien/IMG_0312.jpeg',
+    'InItalien/IMG_6917.jpeg',
+    'InItalien/IMG_8499.jpeg',
+    'InItalien/IMG_9287.jpeg',
+    'InItalien/IMG_9332.jpeg',
+    'InItalien/IMG_9352.jpeg',
+    'InItalien/IMG_9369.jpeg',
+    'InItalien/IMG_9370.jpeg',
+    'InItalien/IMG_9470.jpeg',
+    'InItalien/IMG_9480.jpeg',
+    'InItalien/IMG_9592.jpeg',
+    'InItalien/IMG_9593.jpeg',
+    'InItalien/IMG_9594.jpeg',
+    'InItalien/IMG_9597.jpeg',
+    'InItalien/IMG_9598.jpeg',
+    'InItalien/IMG_9599.jpeg',
+    'InItalien/QgNsMtTA.jpeg'
+];
+// --- ENDE NEUE BILDER ---
+
 const gameConfigs = {
     'InItalien': {
-        imageCount: 12, 
-        gridColumns: 6,
-        folderName: 'InItalien'
+        imageCount: IN_ITALIEN_FILES.length, // Nutzt alle 19 Bilder für das Spiel
+        gridColumns: 5, // Passt das Grid an (4x5 = 20, 4x4 = 16) -> 19 Paare geht nicht ganz auf, 
+        imagePaths: IN_ITALIEN_FILES 
     },
     'BabyFox': { 
         imageCount: 12, 
@@ -64,6 +88,7 @@ const gameConfigs = {
 };
 
 let currentConfig = gameConfigs['InItalien']; 
+maxPairs = currentConfig.imageCount; // Setzt maxPairs korrekt für das Initialthema
 
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
@@ -89,18 +114,35 @@ function setupGame() {
     lockBoard = false;
     moves = 0;
     pairsFound = 0;
-    maxPairs = currentConfig.imageCount;
-    matchedImages = [];
+    
+    // Setzt maxPairs basierend auf der Konfiguration
+    if (currentConfig.imagePaths) {
+         // Für InItalien: alle Bilder verwenden
+        maxPairs = currentConfig.imagePaths.length;
+    } else {
+        // Für BabyFox, ThroughTheYears, Gemixt: 12 Paare
+        maxPairs = 12;
+    }
     
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    memoryGrid.style.gridTemplateColumns = `repeat(${currentConfig.gridColumns}, 1fr)`;
+    // Wenn die Anzahl der Paare ungerade ist (wie 19), verwenden wir das nächste gerade Grid (4x5=20)
+    let totalCards = maxPairs * 2;
+    let effectiveGridColumns = currentConfig.gridColumns;
+    if (totalCards > 24 && currentConfig.folderName === 'InItalien') {
+        // 19 Paare = 38 Karten. 6x4 Grid ist zu klein (24). Wir verwenden 6x7 = 42
+        effectiveGridColumns = 7; 
+        memoryGrid.style.gridTemplateColumns = `repeat(${effectiveGridColumns}, 1fr)`;
+    } else {
+        memoryGrid.style.gridTemplateColumns = `repeat(${effectiveGridColumns}, 1fr)`;
+    }
+
 
     let selectedPaths;
     
     if (currentConfig.folderName === 'Gemixt') {
-        const otherFolders = ['InItalien', 'BabyFox', 'ThroughTheYears'];
+        const otherFolders = ['BabyFox', 'ThroughTheYears']; // InItalien wird nicht gemischt
         let allPaths = [];
         
         otherFolders.forEach(folder => {
@@ -109,9 +151,13 @@ function setupGame() {
         });
 
         shuffleArray(allPaths);
+        // Bei Gemixt immer 12 Paare
         selectedPaths = allPaths.slice(0, 12);
-
+    } else if (currentConfig.imagePaths) {
+        // Feste Pfade (InItalien) - Alle verwenden
+        selectedPaths = currentConfig.imagePaths;
     } else {
+        // Zufällige Pfade (BabyFox, ThroughTheYears) - 12 von 20
         selectedPaths = getRandomImagePaths(currentConfig.folderName, 20);
     }
 
@@ -119,6 +165,15 @@ function setupGame() {
     selectedPaths.forEach(fullPath => {
         gameCardValues.push(fullPath, fullPath); 
     });
+    
+    // Hinzufügen einer Platzhalterkarte, falls die Anzahl ungerade ist (z.B. 19 Paare = 38 Karten)
+    if (gameCardValues.length % 2 !== 0) {
+        // Um ein ungerades Paar zu vermeiden, entfernen wir das letzte Bild, 
+        // oder Sie könnten eine dritte Karte für ein "Triple" hinzufügen,
+        // aber das würde die Spielmechanik ändern. Wir entfernen hier das letzte Bild.
+        gameCardValues.pop();
+        maxPairs = (gameCardValues.length / 2);
+    }
 
     shuffleArray(gameCardValues);
 
