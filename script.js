@@ -1,18 +1,12 @@
 const memoryGrid = document.querySelector('.memory-grid');
 const statsMoves = document.getElementById('moves');
 const statsPairsFound = document.getElementById('pairs-found');
-const matchSuccessOverlay = document.getElementById('match-success-overlay');
-const matchedImagePreview = document.getElementById('matched-image-preview');
-const galleryOverlay = document.getElementById('gallery-overlay');
-const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
 const galleryImagesContainer = document.getElementById('gallery-images'); 
-
 const permanentGallery = document.getElementById('permanent-gallery');
 const imageDetailOverlay = document.getElementById('image-detail-overlay');
 const detailImage = document.getElementById('detail-image');
 const closeDetailButton = document.getElementById('close-detail');
-
 const difficultySlider = document.getElementById('difficulty-slider');
 const difficultyDescription = document.getElementById('difficulty-description');
 
@@ -26,7 +20,7 @@ let lockBoard = false;
 let firstCard, secondCard; 
 let moves = 0;
 let pairsFound = 0;
-let matchedImages = []; 
+let matchedImages = []; // Aktuell gefundene Paare (Pfade)
 
 const difficultyConfigs = {
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
@@ -35,8 +29,9 @@ const difficultyConfigs = {
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 const BASE_URL = 'Bilder/'; 
+let currentThemeConfig = null; // Wird beim DOMContentLoaded gesetzt
 
-// --- Datenstrukturen (Kombinierte Pfade) ---
+// --- Datengrundlagen und Hilfsfunktionen (Pfade und Shuffle bleiben gleich) ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -47,7 +42,6 @@ function shuffleArray(array) {
 
 function selectRandomImagePaths(allPaths, count) {
     if (allPaths.length < count) {
-        // Falls nicht genügend Bilder verfügbar sind, nutze alle und erstelle weniger Paare
         count = allPaths.length;
     }
     let shuffled = [...allPaths];
@@ -63,7 +57,7 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
-// NEUE BABYFOX-BILDER + alte nummerierte Bilder
+// Integrierte Pfade (wie in der Anforderung aktualisiert)
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
@@ -72,7 +66,6 @@ const BABYFOX_FILES = [
     'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
     ...generateNumberedPaths('BabyFox', 20)
 ];
-
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
     'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
@@ -80,7 +73,6 @@ const IN_ITALIEN_FILES = [
     'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
     'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg' 
 ];
-
 const THROUGH_THE_YEARS_FILES = generateNumberedPaths('ThroughTheYears', 20);
 
 const gameConfigs = {
@@ -90,29 +82,57 @@ const gameConfigs = {
     'Gemixt': { name: 'Gemixt' }
 };
 
-let currentThemeConfig = gameConfigs['Gemixt']; // Standard: Gemixt
+// --- Score/Fortschritt-Logik ---
 
-// --- FAVORITEN UND GALERIE LOGIK (Funktioniert, wird übernommen und leicht korrigiert) ---
+function getGameProgress() {
+    try {
+        const progress = localStorage.getItem('memoryGameProgress');
+        return progress ? JSON.parse(progress) : { currentTheme: 'Gemixt', currentDifficulty: '1', moves: 0, pairsFound: 0, collectedPaths: [] };
+    } catch (e) {
+        return { currentTheme: 'Gemixt', currentDifficulty: '1', moves: 0, pairsFound: 0, collectedPaths: [] };
+    }
+}
+
+function saveGameProgress(currentPaths, isNewGame = false) {
+    if (isNewGame) {
+         // Beim Start eines neuen Spiels (neues Thema/Schwierigkeit), speichere nur die Konfiguration
+        const progress = {
+            currentTheme: currentThemeConfig.name,
+            currentDifficulty: currentDifficulty.name,
+            moves: 0,
+            pairsFound: 0,
+            collectedPaths: []
+        };
+        localStorage.setItem('memoryGameProgress', JSON.stringify(progress));
+    } else if (currentPaths && currentPaths.length > 0) {
+        // Spiel im Gange: Speichere den Zustand (Pfade, Züge etc.)
+        const progress = {
+            currentTheme: currentThemeConfig.name,
+            currentDifficulty: currentDifficulty.name,
+            moves: moves,
+            pairsFound: pairsFound,
+            collectedPaths: currentPaths // Liste der Paare/Pfade
+        };
+        localStorage.setItem('memoryGameProgress', JSON.stringify(progress));
+    }
+}
+
+// --- Galerielogik (Kurzversion) ---
 
 function getFavorites() {
     try {
         const favorites = localStorage.getItem('memoryFavorites');
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
     } catch (e) {
-        console.error("Fehler beim Laden der Favoriten:", e);
         return [];
     }
 }
 
 function saveFavorites(favorites) {
-    try {
-        localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
-    } catch (e) {
-        console.error("Fehler beim Speichern der Favoriten:", e);
-    }
+    localStorage.setItem('memoryFavorites', JSON.stringify([...new Set(favorites)]));
 }
 
-function createGalleryItem(imagePath, isFavorite = false) {
+function createGalleryItem(imagePath, isFavorite = false, isFinalGallery = false) {
     const fullSrc = `${BASE_URL}${imagePath}`;
     const item = document.createElement('div');
     item.classList.add('gallery-item');
@@ -129,16 +149,20 @@ function createGalleryItem(imagePath, isFavorite = false) {
         icon.classList.add('active');
     }
 
-    icon.addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        toggleFavorite(imagePath, icon);
-    });
+    if (!isFinalGallery) {
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            toggleFavorite(imagePath, icon);
+        });
+    }
     
     item.addEventListener('click', () => {
         showImageDetail(fullSrc); 
     });
 
-    item.appendChild(icon);
+    if (!isFinalGallery) {
+        item.appendChild(icon);
+    }
     return item;
 }
 
@@ -184,18 +208,7 @@ function loadPermanentGallery() {
     }
 }
 
-// --- SPIELLOGIK (Fehlerbehebung und Integration) ---
-
-difficultySlider.addEventListener('input', (e) => {
-    currentDifficulty = difficultyConfigs[e.target.value];
-    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
-    const pairs = e.target.value === '2' ? 18 : 8;
-    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
-});
-
-difficultySlider.addEventListener('change', () => {
-    setupGame(); 
-});
+// --- Spiel-Flow und Setup ---
 
 themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
@@ -205,54 +218,68 @@ themeButtons.forEach(button => {
         themeButtons.forEach(btn => btn.classList.remove('active-theme'));
         e.target.classList.add('active-theme');
         
-        setupGame();
+        setupGame(true); // Neues Spiel starten
     });
 });
 
+difficultySlider.addEventListener('change', (e) => {
+    currentDifficulty = difficultyConfigs[e.target.value];
+    setupGame(true); // Neues Spiel starten
+});
 
-function setupGame() {
+function setupGame(isNewGame = false) {
+    // Wenn es kein neues Spiel ist, laden Sie den gespeicherten Zustand
+    if (!isNewGame) {
+        const progress = getGameProgress();
+        currentThemeConfig = gameConfigs[progress.currentTheme];
+        currentDifficulty = difficultyConfigs[progress.currentDifficulty === 'Leicht' ? '1' : '2'];
+        
+        moves = progress.moves;
+        pairsFound = progress.pairsFound;
+        matchedImages = progress.collectedPaths;
+        
+        // Aktualisiere UI-Elemente
+        difficultySlider.value = currentDifficulty.name === 'Leicht' ? '1' : '2';
+        difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
+        
+        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
+        document.querySelector(`.theme-button[data-theme="${progress.currentTheme}"]`).classList.add('active-theme');
+    } else {
+        // Starte von Null
+        moves = 0;
+        pairsFound = 0;
+        matchedImages = [];
+        saveGameProgress(matchedImages, true); // Speichere neue Spielkonfiguration
+    }
+
+    // UI-Initialisierung
     memoryGrid.innerHTML = '';
     cards = [];
     hasFlippedCard = false;
     lockBoard = false;
     firstCard = null;
     secondCard = null;
-    moves = 0;
-    pairsFound = 0;
-    matchedImages = []; 
-    
-    // UI zurücksetzen
-    matchSuccessOverlay.classList.remove('active');
+
+    statsMoves.textContent = `Züge: ${moves}`;
+    statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     galleryOverlay.classList.remove('active');
     
     const MAX_PAIRS = currentDifficulty.pairs; 
-    
-    statsMoves.textContent = `Züge: ${moves}`;
-    statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Grid-Styling anwenden
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
     let selectedPaths = [];
     
     if (currentThemeConfig.name === 'Gemixt') {
-        let allPaths = [
-            ...BABYFOX_FILES, 
-            ...THROUGH_THE_YEARS_FILES, 
-            ...IN_ITALIEN_FILES
-        ];
+        const allPaths = [...IN_ITALIEN_FILES, ...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES];
         selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
-
-    } else if (currentThemeConfig.allImagePaths) {
+    } else {
         selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
     }
     
-    // Logik-Check: Prüfen, ob genügend Paare ausgewählt wurden
     if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        const pathCount = selectedPaths.length;
-        console.error(`FEHLER: Nur ${pathCount} einzigartige Bilder gefunden. Benötigt: ${MAX_PAIRS}`);
-        memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${pathCount}/${MAX_PAIRS}) laden. Prüfe die Pfade im Ordner "${currentThemeConfig.name}"!</p>`;
+        memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${selectedPaths.length}/${MAX_PAIRS}) laden!</p>`;
         return;
     }
 
@@ -260,7 +287,6 @@ function setupGame() {
     selectedPaths.forEach(fullPath => {
         gameCardValues.push(fullPath, fullPath); 
     });
-    
     shuffleArray(gameCardValues);
 
     gameCardValues.forEach(fullPath => { 
@@ -269,6 +295,7 @@ function setupGame() {
         card.dataset.path = fullPath; 
         
         const imageURL = `${BASE_URL}${fullPath}`; 
+        const isMatched = matchedImages.includes(fullPath);
 
         card.innerHTML = `
             <div class="front-face">
@@ -277,14 +304,16 @@ function setupGame() {
             <span class="back-face">🦊</span>
         `;
         
-        // Füge Event Listener HIER hinzu, nachdem die Karte erstellt wurde
-        card.addEventListener('click', flipCard); 
-        
+        // Karten Event Listener und Wiederherstellung des Spielstands
+        if (isMatched) {
+            card.classList.add('flip', 'match');
+        } else {
+             card.addEventListener('click', flipCard); 
+        }
+
         memoryGrid.appendChild(card);
         cards.push(card);
     });
-    
-    // Doppelte Listener-Zuweisung entfernt, sie ist jetzt oben in der Schleife.
 }
 
 
@@ -318,28 +347,31 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Die Karten bleiben aufgedeckt (flip-Klasse bleibt)
+    // Fügt Match-Klassen hinzu (für den Glow)
     firstCard.classList.add('match'); 
     secondCard.classList.add('match'); 
     
+    // Entfernt Listener
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
     const matchedImagePath = firstCard.dataset.path;
-    const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
     
-    showMatchSuccess(matchedImageSrc);
-    
-    setTimeout(() => {
-        // Fügt das Bild zur permanenten Galerie hinzu (nur den Pfad)
-        matchedImages.push(matchedImagePath);
-        loadPermanentGallery(); 
-    }, 1500); 
+    // Animation/Hinzufügen zur Galerie
+    matchedImages.push(matchedImagePath);
+    saveGameProgress(matchedImages); // Spielstand speichern
+    loadPermanentGallery(); 
 
     resetBoard(); 
     
     if (pairsFound === currentDifficulty.pairs) { 
         setTimeout(gameOver, 1000); 
+    } else {
+         // Grüner Glow nach 1.5s wieder leicht entfernen, wenn das Spiel weitergeht
+         setTimeout(() => {
+             firstCard.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.3)';
+             secondCard.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.3)';
+         }, 1500);
     }
 }
 
@@ -352,6 +384,11 @@ function unflipCards() {
     setTimeout(() => {
         firstCard.classList.remove('flip', 'error');
         secondCard.classList.remove('flip', 'error');
+        
+        // Roten Glow nach dem Unflip entfernen
+        firstCard.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.3)';
+        secondCard.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.3)';
+        
         resetBoard(); 
     }, 1000);
 }
@@ -361,14 +398,6 @@ function resetBoard() {
     [firstCard, secondCard] = [null, null];
 }
 
-function showMatchSuccess(imageSrc) {
-    matchedImagePreview.src = imageSrc;
-    matchSuccessOverlay.classList.add('active');
-    setTimeout(() => {
-        // WICHTIG: Die Meldung soll nur kurz aufleuchten.
-        matchSuccessOverlay.classList.remove('active'); 
-    }, 1500);
-}
 
 function gameOver() {
     soundWin.play();
@@ -377,34 +406,24 @@ function gameOver() {
     const favorites = getFavorites();
 
     matchedImages.forEach(path => {
-        // Erstellt das Galerie-Item, nun mit korrekter, proportionaler Darstellung
-        const item = createGalleryItem(path, favorites.includes(path));
-        
-        // Entfernt den Herz-Icon in der End-Galerie
-        const icon = item.querySelector('.favorite-icon');
-        if(icon) {
-            icon.remove();
-        }
-        // Fügt es zur finalen Galerie hinzu
+        // Finale Galerie, Icons entfernt
+        const item = createGalleryItem(path, favorites.includes(path), true);
         galleryImagesContainer.appendChild(item);
     });
     galleryOverlay.classList.add('active');
+    
+    // Setze das gespeicherte Spiel zurück, wenn es gewonnen wurde
+    saveGameProgress([], true);
 }
 
 closeGalleryButton.addEventListener('click', () => {
     galleryOverlay.classList.remove('active');
-    setupGame(); 
+    setupGame(true); // Starte ein neues Spiel
 });
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Setze initialen Zustand: Leicht (8 Paare) und Gemixt
-    currentDifficulty = difficultyConfigs[difficultySlider.value];
-    difficultyDescription.textContent = `${currentDifficulty.name} (${currentDifficulty.pairs} Paare)`;
-    
-    // Aktiviere den 'Gemixt' Button (wird bereits in HTML gesetzt)
-    // currentThemeConfig = gameConfigs['Gemixt']; // Ist schon global so gesetzt
-    
+    // Initiales Laden des Spiels (oder Fortsetzen)
     loadPermanentGallery();
-    setupGame();
+    setupGame(false);
 });
