@@ -9,9 +9,11 @@
 </head>
 <body>
 
-    <a href="https://xanderfoxy.github.io/AsmaasWunderland" class="back-link">
-        <i class="fas fa-arrow-left"></i> Zurück zu Asmaas Wunderland
-    </a>
+    <div class="back-link-container">
+        <a href="https://xanderfoxy.github.io/AsmaasWunderland" class="back-link theme-button">
+            <i class="fas fa-arrow-left"></i> Zurück zu Asmaas Wunderland
+        </a>
+    </div>
 
     <div class="game-container">
         
@@ -19,6 +21,7 @@
             <h2>Schwierigkeit</h2>
             
             <div class="difficulty-slider-container">
+                <div id="fox-head-slider">🦊</div>
                 <input type="range" min="1" max="2" value="1" id="difficulty-slider" class="slider">
                 <div class="slider-labels">
                     <span>Leicht (8 Paare)</span>
@@ -71,13 +74,13 @@
             <div id="daily-matches-container" class="daily-matches-container">
                  <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel</h2>
                 <div id="daily-matches-gallery" class="daily-matches-gallery">
-                    </div>
+                </div>
             </div>
             
             <div id="match-success-overlay" class="match-success-overlay overlay-modal">
                 <div class="overlay-content">
                     <img id="matched-image-preview" src="" alt="Gefundenes Bild">
-                    </div>
+                </div>
             </div>
             
             <img id="animated-match-thumbnail" src="" alt="Thumbnail Animation" class="hidden-by-default">
@@ -86,8 +89,7 @@
                 <div class="overlay-content detail-content" style="max-width: 800px;">
                     <h2>Dein Spielverlauf</h2>
                     <div id="history-list"></div>
-                    <button id="close-history" class="theme-button">Schließen</button>
-                </div>
+                    </div>
             </div>
             
             <div id="gallery-overlay" class="overlay">
@@ -100,9 +102,8 @@
             </div>
 
             <div id="image-detail-overlay" class="overlay">
-                <div class="overlay-content detail-content" style="max-width: 900px; max-height: 80vh;">
+                <div id="detail-content" class="overlay-content detail-content" style="max-width: 900px; max-height: 80vh;">
                     <img id="detail-image" src="" alt="Große Ansicht des Bildes" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                    <button id="close-detail" class="theme-button">Schließen</button>
                 </div>
             </div>
 
