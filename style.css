@@ -22,11 +22,12 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
     color: var(--text-color);
+    /* Wichtig: Sicherstellen, dass der Container zentriert wird */
     min-height: 100vh;
     padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: flex-start; /* Gerät bleibt oben, was oft besser ist */
 }
 
 .back-link {
@@ -56,7 +57,7 @@ body {
     border: 5px solid var(--bg-white);
 }
 
-/* --- Sidebar und Buttons (Apple-ähnliches, flüssiges Design) --- */
+/* --- Sidebar und Buttons (Original Design mit Rahmen) --- */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -75,16 +76,16 @@ body {
 
 .theme-nav {
     display: flex;
-    flex-direction: column; /* Buttons untereinander */
+    flex-direction: column; 
     gap: 12px;
     margin-top: 20px;
 }
 
 .theme-button, #close-gallery, #close-detail {
-    /* Edles, abgerundetes Button-Design */
-    background-color: var(--secondary-color);
+    /* Wiederherstellung des ursprünglichen Designs mit Rahmen */
+    background-color: var(--bg-white); 
     color: var(--primary-color);
-    border: none;
+    border: 3px solid var(--secondary-color); /* Wichtig: Farbiger Rahmen */
     padding: 12px 20px;
     border-radius: 25px; 
     font-weight: bold;
@@ -96,15 +97,17 @@ body {
 }
 
 .theme-button:hover, #close-gallery:hover, #close-detail:hover {
-    background-color: #ffd060;
+    background-color: var(--secondary-color); /* Hover-Effekt wie ursprünglich */
+    color: var(--primary-color); 
     transform: translateY(-2px);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
 }
 
 .theme-button.active-theme {
+    /* Aktiver Button ist Lila mit Gelbem Rahmen */
     background-color: var(--card-main-color);
     color: white;
-    border: 3px solid var(--secondary-color);
+    border: 3px solid var(--secondary-color); 
     transform: scale(1.05);
 }
 
@@ -177,7 +180,7 @@ body {
 .memory-card {
     position: relative;
     width: 100%;
-    padding-bottom: 100%; /* Erzeugt eine quadratische Karte */
+    padding-bottom: 100%; 
     transform-style: preserve-3d;
     transition: transform 0.8s;
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3); 
@@ -190,7 +193,6 @@ body {
 }
 
 .front-face, .back-face {
-    /* WICHTIG: absolute Positionierung für 3D-Flip */
     position: absolute;
     top: 0;
     left: 0;
@@ -209,23 +211,21 @@ body {
     font-size: 3rem;
     color: white;
     user-select: none;
-    z-index: 2; /* Fuchs-Seite ist oben, bevor geklappt wird */
+    z-index: 2; 
 }
 
 .front-face {
-    /* WICHTIG: Die Rückseite des Flippens */
     transform: rotateY(180deg);
     background-color: var(--bg-white);
     padding: 3px; 
     z-index: 1; 
-    overflow: hidden; /* Sicherstellen, dass nichts überläuft */
+    overflow: hidden; 
 }
 
 .front-face img {
-    /* KORREKTUR: Bild füllt den Platz innerhalb des Front-Face-Containers */
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Crop für die Karten */
+    object-fit: cover; 
     border-radius: 8px;
 }
 
@@ -243,9 +243,9 @@ body {
 }
 
 #permanent-gallery {
-    display: flex; /* Für eine einzige, scrollbare Reihe */
-    flex-wrap: nowrap; /* Wichtig: Verhindert Umbruch in zwei Reihen */
-    overflow-x: auto; /* Horizontal scrollbar */
+    display: flex; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
     padding: 10px 0;
     gap: 15px;
     border-top: 5px solid var(--primary-color); 
@@ -255,7 +255,6 @@ body {
 
 .gallery-item {
     position: relative;
-    /* Einheitliche, kleine Größe */
     width: 100px; 
     height: 100px; 
     flex-shrink: 0; 
@@ -268,7 +267,6 @@ body {
 .gallery-item img {
     width: 100%;
     height: 100%;
-    /* Originalproportion in der Galerie-Vorschau (KEIN Crop) */
     object-fit: contain; 
 }
 
@@ -286,21 +284,75 @@ body {
 }
 
 .favorite-icon.active {
-    color: var(--card-main-color); /* Rot bei Favorit */
+    color: var(--card-main-color); 
     opacity: 1;
 }
 
 /* --- Overlays --- */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#image-detail-overlay.active, #gallery-overlay.active {
+    display: flex;
+}
+
+.overlay-content {
+    background: var(--bg-white);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    color: var(--primary-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detail-content {
+    background: transparent;
+    padding: 10px;
+    box-shadow: none;
+}
+
 #match-success-overlay {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.3s, visibility 0s 0.3s;
+    /* Macht es zu einem temporären Pop-up */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    height: auto;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    z-index: 500;
 }
 
 #match-success-overlay.active {
     visibility: visible;
     opacity: 1;
     transition: opacity 0.3s;
+}
+
+#match-success-overlay .overlay-content {
+    background-color: var(--bg-dark-main);
+    color: var(--secondary-color);
+    padding: 20px 40px;
+    border: 5px solid var(--secondary-color);
 }
 
 #matched-image-preview {
@@ -312,12 +364,24 @@ body {
     border: 5px solid var(--secondary-color);
 }
 
-#image-detail-overlay.active {
-    /* ... (Stile bleiben gleich) ... */
-}
-
 #detail-image {
     max-width: 90vw;
     max-height: 80vh; 
-    object-fit: contain; /* Originalproportion */
+    object-fit: contain; 
+}
+
+#gallery-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+#gallery-images .gallery-item {
+    width: 120px;
+    height: 120px;
 }
