@@ -18,56 +18,16 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Ein sanfter, spielerischer Hintergrund */
     background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
     color: var(--text-color);
     min-height: 100vh;
     padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Startet das Spiel etwas höher */
+    align-items: flex-start;
 }
 
-/* --- Link 'Zurück' --- */
-.back-link {
-    position: fixed; /* Fixed, um das Scrollen zu ignorieren */
-    top: 20px;
-    left: 20px;
-    text-decoration: none;
-    color: var(--primary-color);
-    font-size: 1.1rem;
-    padding: 10px 20px;
-    border-radius: 30px;
-    background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
-    z-index: 100;
-}
-
-.back-link:hover {
-    background-color: var(--bg-light);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
-.back-link i {
-    margin-right: 8px;
-}
-
-/* --- Haupt-Container --- */
-.game-container {
-    display: flex;
-    width: 100%;
-    max-width: 1250px; /* Etwas breiter als vorher */
-    background-color: white;
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
-    margin-top: 50px;
-    border: 5px solid #fff; /* Innenrahmen für das Spielbrett */
-}
-
-/* --- Sidebar --- */
+/* --- Sidebar & Navigation --- */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -78,39 +38,54 @@ body {
 }
 
 .sidebar h2 {
-    margin-bottom: 25px;
+    margin-top: 20px;
+    margin-bottom: 15px;
     color: var(--secondary-color);
     font-size: 1.6rem;
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
-.sidebar nav {
+.sidebar hr {
+    border: 0;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.3);
+    margin: 20px 0;
+}
+
+.difficulty-nav, .theme-nav {
     display: flex;
     flex-direction: column;
 }
 
-.theme-button {
-    background-color: var(--card-main-color); /* Rot, wenn inaktiv */
+.theme-button, .difficulty-button {
+    background-color: var(--card-main-color);
     color: white;
-    border: 3px solid var(--card-border-color); /* Gelber Rand */
+    border: 3px solid var(--card-border-color);
     padding: 12px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: bold;
     box-shadow: 0 4px 0px rgba(0, 0, 0, 0.2);
     transition: all 0.2s;
 }
 
-.theme-button:hover {
+.theme-button:hover, .difficulty-button:hover {
     background-color: var(--secondary-color);
     color: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 6px 0px rgba(0, 0, 0, 0.2);
 }
 
-/* --- Hauptinhalt --- */
+.active-theme, .active-difficulty {
+    background-color: var(--secondary-color) !important;
+    color: var(--primary-color) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Hauptinhalt und Grid (Unverändert, bis auf die dynamische maxWidth) --- */
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -127,7 +102,6 @@ body {
 }
 
 .stats-box {
-    /* Umbenannt von .stats zu .stats-box */
     width: 100%;
     max-width: 600px;
     display: flex;
@@ -142,21 +116,18 @@ body {
     color: var(--primary-color);
 }
 
-/* --- Memory Grid --- */
 .memory-grid {
     display: grid;
-    /* Feste Größe: 4 Reihen, 6 Spalten */
-    grid-template-columns: repeat(6, 1fr); 
     gap: 12px;
     padding: 15px;
     background-color: var(--bg-light);
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 680px; /* Angepasst für 6 Karten */
+    /* max-width wird über JS gesteuert, damit es passt */
     width: 100%;
 }
 
-/* --- Memory Karte --- */
+/* --- Memory Karte (WICHTIG: Quadratsiche Form) --- */
 .memory-card {
     position: relative;
     perspective: 1000px;
@@ -169,24 +140,6 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Zustände der Karte */
-.memory-card.flip {
-    transform: rotateY(180deg);
-}
-
-.memory-card.match {
-    pointer-events: none;
-    border: 4px solid var(--match-color);
-    animation: pulseMatch 0.5s;
-    box-shadow: 0 0 20px var(--match-color);
-}
-
-.memory-card.error {
-    border: 4px solid var(--error-color);
-    animation: shakeError 0.5s;
-}
-
-/* Vorder- und Rückseite */
 .front-face, .back-face {
     width: 100%;
     height: 100%;
@@ -200,30 +153,31 @@ body {
 .front-face {
     transform: rotateY(180deg);
     background-color: white;
-    padding: 3px; /* Innenabstand für sichtbaren Rand des Bildes */
+    padding: 3px; 
     border: 1px solid #ddd;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* WICHTIG: CROPPING der Bilder */
+    object-fit: cover; 
     border-radius: 8px;
 }
 
 .back-face {
-    background-color: var(--card-main-color); /* Rot-braun */
+    background-color: var(--card-main-color);
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 3rem; 
-    color: var(--card-border-color); /* Gelber Fuchs */
-    border: 5px solid var(--card-border-color); /* Dicker gelber Rand */
+    color: var(--card-border-color); 
+    border: 5px solid var(--card-border-color); 
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-/* --- OVERLAY (Match Success & Gallery) --- */
+/* --- Overlay und Animationen (Unverändert) --- */
 .overlay {
     position: fixed;
     top: 0;
@@ -252,7 +206,7 @@ body {
     text-align: center;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
     transform: scale(0.7);
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Spring-Effekt */
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     border: 5px solid var(--secondary-color);
 }
 
@@ -304,10 +258,6 @@ body {
     transition: transform 0.2s;
 }
 
-#gallery-images img:hover {
-    transform: scale(1.05);
-}
-
 #close-gallery {
     background-color: var(--card-main-color);
     color: white;
@@ -319,24 +269,6 @@ body {
     font-size: 1.1rem;
     box-shadow: 0 4px 0px var(--card-border-color);
     transition: transform 0.1s, box-shadow 0.1s;
-}
-
-#close-gallery:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 0px var(--card-border-color);
-}
-
-/* --- Animationen --- */
-@keyframes pulseMatch {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03) rotateZ(1deg); }
-    100% { transform: scale(1); }
-}
-
-@keyframes shakeError {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-8px) rotateZ(-1deg); }
-    40%, 80% { transform: translateX(8px) rotateZ(1deg); }
 }
 
 /* --- Media Queries für Responsivität --- */
@@ -354,13 +286,17 @@ body {
         border-bottom: 3px solid var(--secondary-color);
     }
 
-    .sidebar nav {
+    .sidebar h2 {
+        margin-top: 5px;
+    }
+
+    .difficulty-nav, .theme-nav {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
     }
 
-    .theme-button {
+    .theme-button, .difficulty-button {
         flex-grow: 1;
         margin: 5px;
     }
@@ -369,33 +305,25 @@ body {
         padding: 20px;
     }
     
-    .game-title {
-        font-size: 2rem;
-    }
-
     .memory-grid {
-        /* Passt das Grid bei kleineren Bildschirmen an, um die Karten nicht zu klein zu machen */
-        grid-template-columns: repeat(4, 1fr); 
-        max-width: 100%;
+        /* Erlaubt dem Grid, sich automatisch anzupassen */
+        max-width: 100% !important; 
     }
 }
 
 @media (max-width: 480px) {
-    .back-link {
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .game-container {
-        margin-top: 80px;
-    }
-    .stats-box {
-        font-size: 1rem;
-    }
     .memory-grid {
-        /* Kann auf 3 Spalten reduziert werden, wenn nötig */
-        grid-template-columns: repeat(3, 1fr); 
-        gap: 8px;
+        /* Sicherstellen, dass die Spaltenzahl auch auf kleinen Handys reduziert wird */
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 5px;
+    }
+    
+    .memory-card {
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    .back-face {
+        font-size: 2rem;
+        border-width: 3px;
     }
 }
