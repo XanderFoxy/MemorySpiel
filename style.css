@@ -1,17 +1,17 @@
 :root {
     --primary-color: #5d54a4; /* Dunkles Lila - Hauptakzent */
     --secondary-color: #f7b731; /* Gelb-Orange - Akzent/Match */
-    --card-main-color: #c43847; /* Rot - Kartenfarbe (Rot/Fuchs) */
-    --card-border-color: #fbe695; /* Hellgelber Rand (Fuchs) */
+    --card-main-color: #c43847; /* Rot - Kartenfarbe */
+    --card-border-color: #fbe695; /* Hellgelber Rand */
     --text-color: #333;
     --match-color: #38c738; /* Grün */
     --error-color: #ff3838; /* Rot */
     --bg-dark-main: #2c2c2c; /* Dunkles Grau für den Hauptbereich */
-    --bg-light: #f0f4f8; 
+    --bg-light: #f0f4f8; /* Sehr helles Grau-Blau */
     --bg-white: #ffffff;
 }
 
-/* --- Globale Stile und Layout --- */
+/* --- Globale Stile und Layout (Ihre Vorlage) --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -29,7 +29,20 @@ body {
     align-items: flex-start;
 }
 
-/* ... (Sidebar und Theme-Stile bleiben wie gewünscht) ... */
+.back-link {
+    position: fixed; 
+    top: 20px;
+    left: 20px;
+    text-decoration: none;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    border-radius: 30px;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s;
+    z-index: 100;
+}
 
 .game-container {
     display: flex;
@@ -43,6 +56,34 @@ body {
     border: 5px solid var(--bg-white);
 }
 
+/* --- Sidebar und Fuchskopf-Slider (Ihre Vorlage) --- */
+.sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    border-right: 3px solid var(--secondary-color);
+}
+
+/* ... (Sidebar-Header/Hr/Nav Stile bleiben wie in Ihrer Vorlage) ... */
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 40px; 
+    height: 40px; 
+    cursor: pointer;
+    background: var(--secondary-color);
+    border-radius: 50%;
+    border: 4px solid var(--card-main-color);
+    box-shadow: 0 0 0 1px var(--card-main-color) inset;
+    /* Fuchs-Kopf SVG (Ihr Code) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='80'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
+    background-size: 100% 100%;
+}
+
+/* --- Hauptinhalt und Grid (Ihre Vorlage) --- */
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -50,23 +91,9 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: var(--bg-dark-main); /* Dunkler Hauptbereich */
-    color: var(--bg-white); /* Text hell */
+    color: var(--bg-white); 
     overflow-y: auto; 
     overflow-x: hidden;
-}
-
-.game-title {
-    color: var(--secondary-color);
-    margin-bottom: 25px;
-    font-size: 3rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.stats-box {
-    /* Anpassung für dunklen Hintergrund */
-    background-color: var(--primary-color); 
-    color: var(--bg-white);
-    /* ... (Rest unverändert) ... */
 }
 
 .memory-grid {
@@ -77,14 +104,16 @@ body {
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
     width: 100%;
+    /* WICHTIG: Erlaubt Grid-Größenanpassung durch JS, ohne dass es breiter als der Container wird */
+    flex-shrink: 0; 
 }
 
-/* --- Memory Karte mit Crop --- */
+/* --- Memory Karte (Rot/Gelb/Gecroppt) --- */
 .memory-card {
     position: relative;
     perspective: 1000px;
     width: 100%; 
-    aspect-ratio: 1 / 1; 
+    aspect-ratio: 1 / 1; /* Sicherstellung des Quadratformats */
     cursor: pointer;
     transform-style: preserve-3d;
     transition: transform 0.6s;
@@ -92,33 +121,37 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
-.front-face {
-    transform: rotateY(180deg);
-    background-color: var(--bg-white);
-    padding: 3px; 
-    border: 1px solid #ddd;
+.front-face, .back-face {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 10px;
+    backface-visibility: hidden;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    /* WICHTIG: Stellt den Quadratausschnitt (Crop) aus der Mitte sicher! */
+    /* KORREKTUR: Stellt den Quadratausschnitt (Crop) aus der Mitte sicher */
     object-fit: cover; 
     border-radius: 8px;
 }
 
 .back-face {
     background-color: var(--card-main-color); /* Rot */
+    color: var(--card-border-color); /* Gelb-Akzent */
+    border: 5px solid var(--card-border-color); /* Gelber Rand */
+    /* ... (Schraffur/Fuchs-Icon Stile bleiben) ... */
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 3rem; 
-    color: var(--card-border-color); /* Gelb-Akzent */
-    border: 5px solid var(--card-border-color); /* Gelber Rand */
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 
-    /* Gelbe/Weiße Schraffur */
+    /* Schraffur (Ihre Vorlage) */
     background-image: repeating-linear-gradient(
         45deg,
         rgba(255, 255, 255, 0.1) 0,
@@ -133,13 +166,13 @@ body {
 }
 
 .memory-card.match {
-    /* Bleibt aufgedeckt und leicht akzentuiert */
+    /* Karten bleiben dauerhaft offen */
     opacity: 1;
     cursor: default;
     box-shadow: 0 0 15px var(--secondary-color); 
 }
 
-/* --- Permanente Galerie (Foto-Halter) --- */
+/* --- NEU: Permanente Galerie (Galerieständer) --- */
 .permanent-gallery-container {
     width: 100%;
     max-width: 900px;
@@ -159,11 +192,11 @@ body {
 
 #permanent-gallery {
     display: flex;
-    overflow-x: auto; 
+    overflow-x: auto; /* Horizontal scrollbar */
     padding: 10px 0;
     gap: 15px;
-    border-top: 5px solid var(--primary-color); /* Halter-Rand */
-    border-bottom: 5px solid var(--primary-color); /* Halter-Rand */
+    border-top: 5px solid var(--primary-color); 
+    border-bottom: 5px solid var(--primary-color); 
     align-items: flex-end; 
 }
 
@@ -171,26 +204,27 @@ body {
     position: relative;
     width: 100px;
     height: 100px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Verhindert das Schrumpfen */
     border: 3px solid var(--secondary-color); 
     border-radius: 5px;
     cursor: pointer;
     background-color: var(--bg-light);
+    /* Animation: "Fliegt" vom Match-Overlay in den Ständer (simuliert) */
+    animation: fadeInScale 0.5s ease-out;
 }
 
 .gallery-item img {
     width: 100%;
     height: 100%;
-    /* WICHTIG: Originalproportionen in der Galerie-Vorschau */
+    /* Originalproportion in der Galerie-Vorschau */
     object-fit: contain; 
-    transition: transform 0.2s;
 }
 
 .favorite-icon {
     position: absolute;
     top: 5px;
     right: 5px;
-    color: var(--bg-white); /* Weißer Herz-Standard */
+    color: var(--bg-white); 
     font-size: 1.2rem;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
     cursor: pointer;
@@ -203,9 +237,43 @@ body {
     opacity: 1;
 }
 
-/* --- Overlays (Glückwunsch / Volltreffer / Großansicht) --- */
-.overlay {
-    /* ... (Stil bleibt gleich) ... */
+/* NEU: Großansicht-Overlay */
+#image-detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
 }
 
-/* ... (Media Queries bleiben gleich) ... */
+#image-detail-overlay.active {
+    display: flex;
+}
+
+#detail-image {
+    max-width: 90vw;
+    max-height: 80vh;
+    object-fit: contain; /* Originalproportion */
+}
+
+.detail-content {
+    /* Setzt das Detail-Overlay-Content auf die richtige Farbe */
+    background-color: var(--bg-white);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    color: var(--primary-color);
+}
+
+@keyframes fadeInScale {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ... (Media Queries bleiben wie in Ihrer Vorlage) ... */
