@@ -6,7 +6,7 @@ const statsPairsFound = document.getElementById('pairs-found');
 const matchSuccessOverlay = document.getElementById('match-success-overlay');
 const matchedImagePreview = document.getElementById('matched-image-preview');
 const animatedThumbnail = document.getElementById('animated-match-thumbnail');
-const mainContent = document.querySelector('.main-content'); // Referenzrahmen für Animation
+const mainContent = document.querySelector('.main-content'); 
 
 // End-Galerie Elemente
 const galleryOverlay = document.getElementById('gallery-overlay');
@@ -17,8 +17,9 @@ const galleryImagesContainer = document.getElementById('gallery-images');
 // Theme und Schwierigkeit
 const themeButtons = document.querySelectorAll('.theme-button');
 const difficultySlider = document.getElementById('difficulty-slider');
-const difficultyDescription = document.getElementById('difficulty-description');
 const foxHeadSlider = document.getElementById('fox-head-slider'); 
+const difficultyNote = document.getElementById('difficulty-note');
+const difficultyDescriptionPostit = document.getElementById('difficulty-description-postit');
 
 // Favoriten (Sidebar)
 const permanentGallerySidebar = document.getElementById('permanent-gallery-sidebar');
@@ -35,6 +36,9 @@ const detailImage = document.getElementById('detail-image');
 const historyOverlay = document.getElementById('history-overlay');
 const historyList = document.getElementById('history-list');
 const showHistoryBtn = document.getElementById('show-history-btn');
+const historyGameDetailOverlay = document.getElementById('history-game-detail-overlay');
+const historyGameGallery = document.getElementById('history-game-gallery');
+const historyDetailDate = document.getElementById('history-detail-date');
 
 // Audio
 const soundMatch = document.getElementById('sound-match');
@@ -52,14 +56,11 @@ let matchedImages = [];
 let currentTheme = 'Gemixt'; 
 let gameStarted = false; 
 
-// Konfigurationen für 8 Paare und 3 Schwierigkeitsgrade (4x4 Grid)
+// Konfigurationen für 8 Paare und 3 Schwierigkeitsgrade
 const difficultyConfigs = {
-    // 1: Leicht - Klassisches Memory (kein Mischen)
     '1': { name: 'Leicht', description: 'Klassisches Memory. Karten bleiben nach Match an Ort und Stelle.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'classic' }, 
-    // 2: Mittel - Einmaliges Mischen (nach dem ersten Match)
-    '2': { name: 'Mittel', description: 'Nach dem ersten Match werden alle restlichen Karten einmalig neu gemischt.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleOnce' },
-    // 3: Schwer - Ständiges Mischen (nach jedem Zug)
-    '3': { name: 'Schwer', description: 'Nach jedem Zug (unabhängig vom Match) werden alle restlichen Karten neu gemischt.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleAlways' }
+    '2': { name: 'Mittel', description: 'Nach dem ersten Match werden alle restlichen Karten einmalig neu gemischt. Mehr Herausforderung.', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleOnce' },
+    '3': { name: 'Schwer', description: 'Nach jedem Zug (unabhängig vom Match) werden alle restlichen Karten neu gemischt. Maximale Herausforderung!', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleAlways' }
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
@@ -67,6 +68,7 @@ const BASE_URL = 'Bilder/';
 const CURRENT_GAME_STORAGE_KEY = 'memoryCurrentGame';
 const FAVORITES_STORAGE_KEY = 'memoryFavorites';
 const HISTORY_STORAGE_KEY = 'memoryHistory';
+const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId'; // Für eindeutige Speicherung
 
 // --- DATENSTRUKTUREN (VOLLSTÄNDIG) ---
 const IN_ITALIEN_FILES = [
@@ -103,7 +105,7 @@ const gameConfigs = {
     'InItalien': { allImagePaths: IN_ITALIEN_FILES, name: 'InItalien' },
     'BabyFox': { allImagePaths: BABYFOX_FILES, name: 'BabyFox' }, 
     'ThroughTheYears': { allImagePaths: THROUGH_THE_YEARS_FILES, name: 'ThroughTheYears' },
-    'Gemixt': { name: 'Gemixt' }
+    'Gemixt': { name: 'Gemixt', allImagePaths: [...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES, ...IN_ITALIEN_FILES] }
 };
 
 let currentThemeConfig = gameConfigs['Gemixt'];
@@ -127,6 +129,9 @@ function saveFavorites(favorites) {
     }
 }
 
+/**
+ * Erstellt ein Galerie-Item mit korrekter Skalierung.
+ */
 function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
     const fullSrc = `${BASE_URL}${imagePath}`;
     const item = document.createElement('div');
@@ -136,6 +141,7 @@ function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
     const img = document.createElement('img');
     img.src = fullSrc;
     img.alt = 'Gefundenes Bild';
+    // object-fit: contain ist jetzt im CSS für .gallery-item img
     item.appendChild(img);
 
     if (showHeart) {
@@ -152,6 +158,7 @@ function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
         item.appendChild(icon);
     }
     
+    // Klick-Handler für Detailansicht
     item.addEventListener('click', () => {
         showImageDetail(fullSrc); 
     });
@@ -172,8 +179,21 @@ function toggleFavorite(imagePath, iconElement) {
     }
     saveFavorites(favorites);
     loadPermanentGallery(); 
+    
+    // Update Favoritenstatus in der aktuellen Tagesgalerie
+    const dailyItems = dailyMatchesGallery.querySelectorAll(`[data-path="${imagePath}"] .favorite-icon`);
+    dailyItems.forEach(icon => {
+        if (index === -1) {
+            icon.classList.add('active');
+        } else {
+            icon.classList.remove('active');
+        }
+    });
 }
 
+/**
+ * Lädt die Favoriten in die Sidebar und die gefundenen Bilder in den Kartenaufsteller.
+ */
 function loadPermanentGallery() {
     permanentGallerySidebar.innerHTML = '';
     const favorites = getFavorites();
@@ -192,13 +212,15 @@ function loadPermanentGallery() {
         });
     }
     
+    // Tagesgalerie (Kartenaufsteller) aktualisieren
     dailyMatchesGallery.innerHTML = '';
     const uniqueMatchedImages = [...new Set(matchedImages)];
     
     if (uniqueMatchedImages.length > 0) {
         dailyMatchesTitle.classList.remove('hidden-by-default');
         uniqueMatchedImages.forEach(path => {
-            dailyMatchesGallery.appendChild(createGalleryItem(path, false, false));
+            // Zeige Herz-Icon in der Tagesgalerie, um Favoriten direkt setzen zu können
+            dailyMatchesGallery.appendChild(createGalleryItem(path, favorites.includes(path), true));
         });
     } else {
         dailyMatchesTitle.classList.add('hidden-by-default');
@@ -207,7 +229,13 @@ function loadPermanentGallery() {
 
 // --- SPIELLOGIK & UX FUNKTIONEN ---
 
+function generateGameId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+}
+
 function saveCurrentGame() {
+    const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
+
     if (!gameStarted || pairsFound === currentDifficulty.pairs) return; 
     
     const cardElements = memoryGrid.querySelectorAll('.memory-card');
@@ -219,6 +247,7 @@ function saveCurrentGame() {
     }));
 
     const gameState = {
+        id: gameId,
         theme: currentTheme,
         difficulty: difficultySlider.value,
         moves: moves,
@@ -228,6 +257,7 @@ function saveCurrentGame() {
         initialShuffleComplete: localStorage.getItem('initialShuffleComplete') === 'true' 
     };
     localStorage.setItem(CURRENT_GAME_STORAGE_KEY, JSON.stringify(gameState));
+    localStorage.setItem(CURRENT_GAME_ID_KEY, gameId);
 }
 
 function loadCurrentGame() {
@@ -247,9 +277,13 @@ function loadCurrentGame() {
     if (currentDifficulty.logic === 'shuffleOnce') {
         localStorage.setItem('initialShuffleComplete', gameState.initialShuffleComplete ? 'true' : 'false');
     }
+    localStorage.setItem(CURRENT_GAME_ID_KEY, gameState.id);
 
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
+    
+    // Blende Post-it aus, wenn Spiel geladen wird
+    difficultyNote.classList.add('hidden-by-default');
 
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
@@ -257,7 +291,6 @@ function loadCurrentGame() {
 
     cards = [];
     
-    // Sortiere nach gespeicherter Position, um die Reihenfolge wiederherzustellen
     gameState.cardsData.sort((a, b) => a.position - b.position);
     
     gameState.cardsData.forEach(cardState => {
@@ -280,8 +313,6 @@ function loadCurrentGame() {
 
 /**
  * Erzeugt das DOM-Element für eine Karte.
- * @param {string} fullPath 
- * @returns {HTMLElement}
  */
 function createCardElement(fullPath, isMatch = false) {
     const card = document.createElement('div');
@@ -307,12 +338,12 @@ function createCardElement(fullPath, isMatch = false) {
 
 /**
  * Erzeugt die Karten für ein neues Spiel und mischt sie.
- * @param {boolean} isNewGame 
  */
 function setupGame(isNewGame = true) {
     if (isNewGame) {
         localStorage.removeItem(CURRENT_GAME_STORAGE_KEY); 
         localStorage.removeItem('initialShuffleComplete'); 
+        localStorage.removeItem(CURRENT_GAME_ID_KEY);
     }
     
     memoryGrid.innerHTML = '';
@@ -329,17 +360,15 @@ function setupGame(isNewGame = true) {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
+    // Post-it anzeigen
+    difficultyNote.classList.remove('hidden-by-default');
+    difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
+    
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
 
     const MAX_PAIRS = currentDifficulty.pairs; 
-    let allPaths = [];
-
-    if (currentThemeConfig.name === 'Gemixt') {
-        allPaths = [...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES, ...IN_ITALIEN_FILES];
-    } else if (currentThemeConfig.allImagePaths) {
-         allPaths = currentThemeConfig.allImagePaths;
-    }
+    let allPaths = currentThemeConfig.allImagePaths;
     
     if (allPaths.length < MAX_PAIRS) {
          memoryGrid.innerHTML = `<p style="color:var(--secondary-color); grid-column: 1 / -1; text-align: center;">FEHLER: Konnte nicht genügend Bilder (${allPaths.length}/${MAX_PAIRS}) laden.</p>`;
@@ -367,11 +396,11 @@ function setupGame(isNewGame = true) {
     });
     
     loadPermanentGallery(); 
+    localStorage.setItem(CURRENT_GAME_ID_KEY, generateGameId());
 }
 
 /**
  * Hilfsfunktion zum Mischen eines Arrays.
- * @param {Array} array 
  */
 function shuffleCardsArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -381,13 +410,12 @@ function shuffleCardsArray(array) {
 }
 
 /**
- * Mischt alle NICHT gefundenen Karten neu und ordnet das Grid neu an, wobei gefundene Karten an ihren Plätzen bleiben.
+ * Mischt alle NICHT gefundenen Karten neu und ordnet das Grid neu an.
  */
 function reShuffleRemainingCards() {
-    // Aktuelle Karten im Grid auslesen
+    // ... (Code unverändert, da die Logik für das Mischen korrekt war)
     const currentCards = Array.from(memoryGrid.querySelectorAll('.memory-card'));
     
-    // Matched-Karten und ihre Positionen (Index)
     const matchedCardData = currentCards
         .map((card, index) => ({
             path: card.dataset.path,
@@ -396,22 +424,18 @@ function reShuffleRemainingCards() {
         }))
         .filter(data => data.isMatch);
         
-    // Pfade der Unmatched-Karten
     const remainingCards = currentCards.filter(card => !card.classList.contains('match'));
     let remainingPaths = remainingCards.map(card => card.dataset.path);
     
-    // Mischen der Pfade
     shuffleCardsArray(remainingPaths);
     
     let finalCardPaths = new Array(currentDifficulty.cardsTotal).fill(null);
     let remainingPathsIndex = 0;
 
-    // 1. Setze Matched-Karten an ihre Positionen
     matchedCardData.forEach(data => {
         finalCardPaths[data.index] = data.path;
     });
     
-    // 2. Fülle die leeren Plätze mit den gemischten Pfaden
     for (let i = 0; i < finalCardPaths.length; i++) {
         if (finalCardPaths[i] === null) {
             finalCardPaths[i] = remainingPaths[remainingPathsIndex];
@@ -419,12 +443,10 @@ function reShuffleRemainingCards() {
         }
     }
     
-    // Neues Grid erstellen
     memoryGrid.innerHTML = '';
     cards = [];
 
     finalCardPaths.forEach((path, index) => {
-        // Prüfe, ob die Karte an dieser Position eine gefundene (Matched-)Karte war
         const isMatch = matchedCardData.some(d => d.index === index);
         const card = createCardElement(path, isMatch);
         if (isMatch) card.classList.add('match', 'flip'); 
@@ -433,7 +455,6 @@ function reShuffleRemainingCards() {
         cards.push(card);
     });
     
-    // Nach dem Mischen müssen alle Board-Zustände zurückgesetzt werden.
     resetBoard();
 }
 
@@ -447,7 +468,8 @@ function flipCard() {
 
     if (!gameStarted) {
         gameStarted = true;
-        localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
+        // Post-it verschwindet beim ersten Zug
+        difficultyNote.classList.add('hidden-by-default');
     }
     
     this.classList.add('flip');
@@ -472,9 +494,7 @@ function flipCard() {
     } else {
         unflipCards();
         
-        // Schwer-Modus: Mische nach fehlerhaftem Zug
         if (currentDifficulty.logic === 'shuffleAlways') {
-            // Verzögerung, um die Error-Animation zu zeigen.
             setTimeout(() => {
                 reShuffleRemainingCards();
             }, 1500);
@@ -486,6 +506,9 @@ function disableCards() {
     pairsFound++;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
+    
+    // Die waiting-Klasse muss entfernt werden, bevor match gesetzt wird
+    firstCard.classList.remove('waiting'); 
     
     firstCard.classList.add('match'); 
     secondCard.classList.add('match'); 
@@ -500,10 +523,8 @@ function disableCards() {
     
     showMatchSuccessAndAnimate(matchedImageSrc, matchedImagePath);
     
-    // Mittel-Modus: Nach dem ERSTEN Match einmal neu mischen
     if (currentDifficulty.logic === 'shuffleOnce' && localStorage.getItem('initialShuffleComplete') !== 'true' && pairsFound === 1) {
         localStorage.setItem('initialShuffleComplete', 'true');
-        // Warten, bis die Animation vorbei ist.
         setTimeout(() => {
              reShuffleRemainingCards();
         }, 1500); 
@@ -522,6 +543,7 @@ function unflipCards() {
     lockBoard = true;
     soundError.play();
     
+    firstCard.classList.remove('waiting'); // Entferne Leuchten
     firstCard.classList.add('error');
     secondCard.classList.add('error');
     
@@ -540,12 +562,14 @@ function unflipCards() {
 function resetBoard() {
     [hasFlippedCard, lockBoard] = [false, false];
     [firstCard, secondCard] = [null, null];
+    // Stelle sicher, dass keine Karte im "waiting"-Zustand ist, wenn das Board zurückgesetzt wird
+    document.querySelectorAll('.memory-card.waiting').forEach(card => card.classList.remove('waiting'));
 }
 
 function showMatchSuccessAndAnimate(imageSrc, imagePath) {
+    // ... (Logik unverändert, da die Animation gut funktioniert)
     matchedImagePreview.src = imageSrc;
     
-    // Positioniere das Pop-up mittig im Main-Content
     const mainContentRect = mainContent.getBoundingClientRect();
     
     const popupWidth = Math.min(mainContentRect.width * 0.4, 400);
@@ -557,18 +581,15 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
     matchSuccessOverlay.style.left = `${(mainContentRect.width - popupWidth) / 2}px`;
     matchSuccessOverlay.classList.add('active');
     
-    // Verzögerung für die Pop-up-Anzeige
     setTimeout(() => {
         
         matchSuccessOverlay.classList.remove('active'); 
         
-        // Starte die Animation
         const matchRect = matchSuccessOverlay.getBoundingClientRect(); 
         
         animatedThumbnail.src = imageSrc;
         animatedThumbnail.classList.remove('hidden-by-default');
         
-        // Startposition (Mitte des Pop-up-Overlays, relativ zum Main-Content)
         animatedThumbnail.style.width = `${matchRect.width - 20}px`; 
         animatedThumbnail.style.height = `${matchRect.height - 20}px`; 
         animatedThumbnail.style.top = `${matchRect.top - mainContentRect.top + 10}px`; 
@@ -584,7 +605,6 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
         if (newTarget) {
             const targetRect = newTarget.getBoundingClientRect();
             
-            // Zielkoordinaten relativ zum main-content
             const targetX = targetRect.left - mainContentRect.left;
             const targetY = targetRect.top - mainContentRect.top;
 
@@ -620,32 +640,61 @@ function gameOver() {
          );
     });
     
-    updateHistory(currentTheme, uniqueMatchedImages.length === currentDifficulty.pairs);
+    // Speichere den abgeschlossenen Spielversuch im Verlauf
+    const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
+    updateHistory(gameId, currentTheme, moves, currentDifficulty.pairs, uniqueMatchedImages, true);
 
     galleryOverlay.classList.add('active');
     localStorage.removeItem(CURRENT_GAME_STORAGE_KEY);
     localStorage.removeItem('initialShuffleComplete');
+    localStorage.removeItem(CURRENT_GAME_ID_KEY);
     gameStarted = false;
 }
 
 function showImageDetail(fullSrc) {
     detailImage.src = fullSrc;
+    // Setze das Overlay immer auf feste Position, um nicht mit main-content zu verschwinden
+    imageDetailOverlay.style.position = 'fixed'; 
     imageDetailOverlay.classList.add('active');
 }
 
 // History-Logik
-function updateHistory(theme, completed) {
+/**
+ * Speichert ein Spiel im Verlauf, fügt einen neuen Eintrag hinzu oder aktualisiert einen bestehenden, wenn das Spiel abgeschlossen wurde.
+ */
+function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
     let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     const today = new Date().toISOString().split('T')[0];
+    const timestamp = Date.now();
     
-    let dailyEntry = history.find(entry => entry.date === today);
-    if (!dailyEntry) {
-        dailyEntry = { date: today, themes: {} };
-        history.push(dailyEntry);
+    const newEntry = {
+        id: id,
+        date: today,
+        theme: theme,
+        moves: moves,
+        pairs: totalPairs,
+        completed: completed,
+        matchedImages: matchedImages,
+        timestamp: timestamp
+    };
+    
+    // Finde Index des Eintrags mit derselben ID, falls er bereits gespeichert wurde (z.B. unvollständig)
+    const existingIndex = history.findIndex(entry => entry.id === id);
+    
+    if (existingIndex !== -1) {
+        // Wenn es ein unvollständiges Spiel war und jetzt abgeschlossen ist, ersetze es.
+        // Andernfalls: wenn es das gleiche unvollständige Spiel ist, aktualisiere nur die Züge/Bilder.
+        const existingEntry = history[existingIndex];
+        
+        // Aktualisiere nur, wenn es eine Verbesserung oder ein Abschluss ist
+        if (completed || existingEntry.completed === false) {
+             history[existingIndex] = newEntry; 
+        } 
+        
+    } else {
+        history.push(newEntry);
     }
     
-    dailyEntry.themes[theme] = { completed: completed, timestamp: Date.now() };
-
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
 }
 
@@ -655,65 +704,136 @@ function showHistory() {
 
     if (history.length === 0) {
         historyList.innerHTML = '<p style="color:var(--secondary-color);">Noch keine Spiele im Verlauf gespeichert.</p>';
+        document.getElementById('daily-score').textContent = 'Heute: 0 Spiele';
+        historyOverlay.classList.add('active');
+        return;
     }
+    
+    history.sort((a, b) => b.timestamp - a.timestamp); // Neueste Spiele zuerst
+    
+    const today = new Date().toISOString().split('T')[0];
+    let todayCount = 0;
 
-    history.sort((a, b) => new Date(b.date) - new Date(a.date));
+    history.forEach(gameEntry => {
+        if (gameEntry.date === today) todayCount++;
+        
+        const item = document.createElement('div');
+        item.classList.add('history-item');
+        item.dataset.gameId = gameEntry.id;
+        
+        const dateObj = new Date(gameEntry.timestamp);
+        const timeStr = dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
-    history.forEach(dayEntry => {
-        const dayHeader = document.createElement('h3');
-        dayHeader.textContent = `Datum: ${dayEntry.date}`;
-        dayHeader.style.marginTop = '15px';
-        dayHeader.style.color = 'var(--secondary-color)';
-        historyList.appendChild(dayHeader);
+        const statusIcon = gameEntry.completed ? '✅' : '⏳';
+        const completionText = gameEntry.completed ? 'Komplett' : 'Unvollständig';
 
-        const themeList = document.createElement('ul');
-        themeList.style.listStyleType = 'none';
-
-        for (const theme in dayEntry.themes) {
-            const themeItem = document.createElement('li');
-            const status = dayEntry.themes[theme].completed ? '✅ Komplett' : '❌ Unvollständig';
-            themeItem.innerHTML = `<strong>${theme}:</strong> ${status}`;
-            themeList.appendChild(themeItem);
-        }
-        historyList.appendChild(themeList);
+        item.innerHTML = `
+            <span class="history-date">${gameEntry.date} - ${timeStr}</span>
+            <span class="history-theme"><strong>${gameEntry.theme}</strong></span>
+            <span class="history-status">${statusIcon} ${completionText}</span>
+            <span class="history-score">Züge: ${gameEntry.moves}</span>
+        `;
+        
+        item.addEventListener('click', () => {
+             viewHistoryGameDetails(gameEntry);
+        });
+        
+        historyList.appendChild(item);
     });
-
+    
+    document.getElementById('daily-score').textContent = `Heute: ${todayCount} Spiele`;
     historyOverlay.classList.add('active');
 }
 
-// --- SLIDER FUCHS LOGIK ---
+function viewHistoryGameDetails(gameEntry) {
+    historyGameGallery.innerHTML = '';
+    historyDetailDate.textContent = `${gameEntry.date} (${gameEntry.theme}, ${gameEntry.completed ? 'Komplett' : 'Unvollständig'})`;
+    
+    const favorites = getFavorites();
+    
+    if (gameEntry.matchedImages && gameEntry.matchedImages.length > 0) {
+        gameEntry.matchedImages.forEach(path => {
+            // Zeige Herz-Icon an, um Favoriten aus dem Verlauf heraus zu setzen
+            historyGameGallery.appendChild(
+                createGalleryItem(path, favorites.includes(path), true)
+            );
+        });
+    } else {
+         historyGameGallery.innerHTML = '<p style="color:var(--secondary-color); font-size: 0.9em; padding: 10px;">Noch keine Paare in diesem Spiel gefunden.</p>';
+    }
+    
+    historyGameDetailOverlay.classList.add('active');
+}
+
+// --- SLIDER FUCHS LOGIK & DESIGN ---
 function updateDifficultyDisplay(animate = true) {
     const min = parseFloat(difficultySlider.min);
     const max = parseFloat(difficultySlider.max);
     const val = parseFloat(difficultySlider.value);
     
-    // Bei 3 Stufen: 1 (0%), 2 (50%), 3 (100%)
-    const correctedPercentage = (val === 1) ? 0 : (val === 2) ? 50 : 100;
+    // Berechne den korrigierten Prozentsatz für 3 Stufen
+    const correctedPercentage = (val - min) / (max - min) * 100;
 
-    const offset = 10; 
+    // Aktualisiere die Position des Fuchs-Emojis
+    const offset = 10; // Halbe Breite des Fuchses
     foxHeadSlider.style.left = `calc(${correctedPercentage}% - ${offset}px)`;
     
     currentDifficulty = difficultyConfigs[val];
-    // Nur den ersten Satz der Beschreibung anzeigen
-    difficultyDescription.textContent = `${currentDifficulty.name} (8 Paare, ${currentDifficulty.description.split('. ')[0]})`;
+    
+    // Aktualisiere den Post-it Text
+    difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
+    
+    // Aktualisiere den dynamischen Farbverlauf der Schiebeleiste
+    // 1 (Grün) -> 2 (Orange) -> 3 (Rot)
+    let colorStart, colorEnd;
+    if (val == 1) {
+        colorStart = 'var(--match-color)'; // Grün
+        colorEnd = 'var(--match-color)';
+    } else if (val == 2) {
+        colorStart = 'var(--match-color)';
+        colorEnd = 'var(--wait-color)'; // Orange
+    } else {
+        colorStart = 'var(--wait-color)';
+        colorEnd = 'var(--error-color)'; // Rot
+    }
+    
+    // Erstelle den Verlauf basierend auf dem aktuellen Wert
+    const sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorEnd} ${correctedPercentage}%, var(--button-bg-inactive) ${correctedPercentage}%, var(--button-bg-inactive) 100%)`;
+    difficultySlider.style.setProperty('--slider-fill', sliderTrackFill);
+
 
     if (animate) {
          foxHeadSlider.style.opacity = 1;
-         setTimeout(() => { foxHeadSlider.style.opacity = 0; }, 1000);
+         setTimeout(() => { foxHeadSlider.style.opacity = 0.8; }, 200); // Bleibt sichtbar
     } else {
-         foxHeadSlider.style.opacity = 0;
+         foxHeadSlider.style.opacity = 0.8; // Standard-Sichtbarkeit
     }
 }
 
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    if (!loadCurrentGame()) {
-        updateDifficultyDisplay(false); 
-        setupGame(true); 
-    }
+    // Event Listener für Overlays (Klick auf Hintergrund schließt)
     
-    // Event Listener für Schwierigkeits-Slider
+    [imageDetailOverlay, historyOverlay, historyGameDetailOverlay].forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('overlay')) {
+                overlay.classList.remove('active');
+            }
+        });
+    });
+    
+    document.querySelector('.close-history-detail').addEventListener('click', () => {
+         historyGameDetailOverlay.classList.remove('active');
+    });
+
+    closeGalleryButton.addEventListener('click', () => {
+        galleryOverlay.classList.remove('active');
+        setupGame(true);
+    });
+    
+    showHistoryBtn.addEventListener('click', showHistory);
+    
     difficultySlider.addEventListener('input', (e) => {
         updateDifficultyDisplay(true);
     });
@@ -722,38 +842,14 @@ document.addEventListener('DOMContentLoaded', () => {
          setupGame(true); 
     });
     
-    // Event Listener für Overlays (Klick auf Overlay schließt)
-    
-    // Detailansicht
-    imageDetailOverlay.addEventListener('click', (e) => {
-        if (e.target.id === 'image-detail-overlay' || e.target.id === 'detail-content' || e.target.id === 'detail-image') {
-            imageDetailOverlay.classList.remove('active');
-        }
-    });
-
-    // History-Overlay
-    historyOverlay.addEventListener('click', (e) => {
-        if (e.target.id === 'history-overlay') {
-            historyOverlay.classList.remove('active');
-        }
-    });
-
-    // End-Galerie Button
-    closeGalleryButton.addEventListener('click', () => {
-        galleryOverlay.classList.remove('active');
-        setupGame(true);
-    });
-    
-    // History anzeigen
-    showHistoryBtn.addEventListener('click', showHistory);
-    
-    // Theme-Wechsel-Logik
     themeButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const newTheme = e.target.dataset.theme;
             
             if (gameStarted && pairsFound < currentDifficulty.pairs) {
-                saveCurrentGame();
+                 // Speichere den unvollständigen Versuch als Eintrag
+                 const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
+                 updateHistory(gameId, currentTheme, moves, currentDifficulty.pairs, [...new Set(matchedImages)], false);
             }
             
             currentTheme = newTheme;
@@ -767,4 +863,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+    
+    if (!loadCurrentGame()) {
+        updateDifficultyDisplay(false); 
+        setupGame(true); 
+    }
+    
+    // Lade die heutige Spielanzahl beim Start
+    const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
+    const today = new Date().toISOString().split('T')[0];
+    const todayCount = history.filter(entry => entry.date === today).length;
+    document.getElementById('daily-score').textContent = `Heute: ${todayCount} Spiele`;
 });
