@@ -45,7 +45,7 @@ function getRandomImagePaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
-// --- NEUE, FESTE BILDER FÜR DEN ORDER 'InItalien' ---
+// --- FESTE BILDER FÜR DEN ORDER 'InItalien' ---
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven7.jpeg',
     'InItalien/IMG_0051.jpeg',
@@ -67,10 +67,9 @@ const IN_ITALIEN_FILES = [
     'InItalien/IMG_9599.jpeg',
     'InItalien/QgNsMtTA.jpeg'
 ];
-// --- ENDE NEUE BILDER ---
+// --- ENDE BILDER ---
 
-// Alle Modi verwenden nun 12 Paare für ein 4x6 Grid
-const PAIR_COUNT = 12;
+const PAIR_COUNT = 12; // Immer 12 Paare für das 4x6 Grid
 
 const gameConfigs = {
     'InItalien': {
@@ -118,44 +117,50 @@ function setupGame() {
     lockBoard = false;
     moves = 0;
     pairsFound = 0;
-    maxPairs = PAIR_COUNT; // Immer 12 Paare
+    maxPairs = PAIR_COUNT; 
     matchedImages = [];
     
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
 
-    // Setzt das Grid fest auf 6 Spalten (4 Reihen x 6 Spalten = 24 Karten)
-    memoryGrid.style.gridTemplateColumns = `repeat(6, 1fr)`;
+    // WICHTIG: Die Spaltenanzahl wird NICHT mehr hier festgelegt,
+    // sondern vollständig vom responsive CSS gesteuert.
 
     let selectedPaths = [];
     
+    // Logik zur Auswahl der 12 Paare
     if (currentConfig.type === 'mixed') {
         let allPaths = [];
-        // Sammelt alle möglichen Pfade aus BabyFox und ThroughTheYears
         currentConfig.folders.forEach(folder => {
             allPaths = allPaths.concat(getRandomImagePaths(folder, 20));
         });
-
-        // Wählt 12 Paare zufällig aus dem Pool
         selectedPaths = selectRandomPaths(allPaths, PAIR_COUNT);
 
     } else if (currentConfig.type === 'fixed') {
-        // Feste Pfade (InItalien) - Wählt 12 von den verfügbaren Bildern
         selectedPaths = selectRandomPaths(currentConfig.allImagePaths, PAIR_COUNT);
 
     } else if (currentConfig.type === 'folder') {
-        // Zufällige Pfade (BabyFox, ThroughTheYears) - Wählt 12 von 20
         const allPaths = getRandomImagePaths(currentConfig.folderName, currentConfig.maxPossibleImages);
         selectedPaths = selectRandomPaths(allPaths, PAIR_COUNT);
     }
+    
+    // Sicherheitsprüfung, falls zu wenige Bilder verfügbar sind
+    if (selectedPaths.length !== PAIR_COUNT) {
+        // Dies sollte nur passieren, wenn in einem Ordner weniger als 12 Bilder sind.
+        console.error(`FEHLER: Konnte nicht die erforderliche Anzahl von Bildpfaden (${PAIR_COUNT}) abrufen. (${selectedPaths.length} gefunden)`);
+        memoryGrid.innerHTML = '<p style="color:red; text-align:center;">Fehler beim Laden: Es wurden nicht genügend einzigartige Bilder für dieses Thema gefunden.</p>';
+        return; 
+    }
+
 
     let gameCardValues = []; 
     selectedPaths.forEach(fullPath => {
-        gameCardValues.push(fullPath, fullPath); 
+        gameCardValues.push(fullPath, fullPath); // Dupliziert für Paare
     });
     
     shuffleArray(gameCardValues);
 
+    // ERSTELLUNG UND EINFÜGEN DER KARTE
     gameCardValues.forEach(fullPath => { 
         const card = document.createElement('div');
         card.classList.add('memory-card');
@@ -166,7 +171,7 @@ function setupGame() {
         card.innerHTML = `
             <img class="front-face" src="${imageURL}" alt="Memory Bild">
             <span class="back-face">🦊</span> 
-        `; // Fuchs-Emoji auf der Rückseite
+        `; 
 
         card.addEventListener('click', flipCard);
         memoryGrid.appendChild(card);
