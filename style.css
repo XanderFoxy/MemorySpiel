@@ -11,7 +11,7 @@
     --bg-white: #ffffff;
 }
 
-/* --- Globale Stile und Layout (Ihre Vorlage) --- */
+/* --- Globale Stile und Layout --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -56,7 +56,7 @@ body {
     border: 5px solid var(--bg-white);
 }
 
-/* --- Sidebar und Fuchskopf-Slider (Ihre Vorlage) --- */
+/* --- Sidebar und Slider (KEIN Windows-Look) --- */
 .sidebar {
     width: 250px;
     background-color: var(--primary-color);
@@ -66,8 +66,19 @@ body {
     border-right: 3px solid var(--secondary-color);
 }
 
-/* ... (Sidebar-Header/Hr/Nav Stile bleiben wie in Ihrer Vorlage) ... */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: var(--card-border-color);
+    border-radius: 4px;
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+    margin-top: 20px;
+}
 
+/* Fuchs-Kopf-Slider-Thumb */
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -77,20 +88,21 @@ body {
     background: var(--secondary-color);
     border-radius: 50%;
     border: 4px solid var(--card-main-color);
-    box-shadow: 0 0 0 1px var(--card-main-color) inset;
-    /* Fuchs-Kopf SVG (Ihr Code) */
+    /* Wichtig: Entfernt den inset-Shadow, der wie ein Windows-Button aussah */
+    /* Fügt den Fuchs-Kopf hinzu */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='80'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E");
     background-size: 100% 100%;
 }
 
-/* --- Hauptinhalt und Grid (Ihre Vorlage) --- */
+
+/* --- Hauptinhalt und Grid --- */
 .main-content {
     flex-grow: 1;
     padding: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--bg-dark-main); /* Dunkler Hauptbereich */
+    background-color: var(--bg-dark-main); 
     color: var(--bg-white); 
     overflow-y: auto; 
     overflow-x: hidden;
@@ -100,79 +112,29 @@ body {
     display: grid;
     gap: 12px;
     padding: 15px;
-    background-color: #1a1a1a; /* Sehr dunkles Grid-Panel (wie gewünscht) */
+    background-color: #1a1a1a; /* Dunkles Grid-Panel */
     border-radius: 15px;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
     width: 100%;
-    /* WICHTIG: Erlaubt Grid-Größenanpassung durch JS, ohne dass es breiter als der Container wird */
-    flex-shrink: 0; 
 }
 
-/* --- Memory Karte (Rot/Gelb/Gecroppt) --- */
-.memory-card {
-    position: relative;
-    perspective: 1000px;
-    width: 100%; 
-    aspect-ratio: 1 / 1; /* Sicherstellung des Quadratformats */
-    cursor: pointer;
-    transform-style: preserve-3d;
-    transition: transform 0.6s;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-}
-
-.front-face, .back-face {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    border-radius: 10px;
-    backface-visibility: hidden;
+/* --- Memory Karte (WICHTIG: Crop) --- */
+.front-face {
+    transform: rotateY(180deg);
+    background-color: var(--bg-white);
+    padding: 3px; 
+    border: 1px solid #ddd;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    /* KORREKTUR: Stellt den Quadratausschnitt (Crop) aus der Mitte sicher */
+    /* KORREKTUR: Erzwingt den Quadratausschnitt (Crop) und verhindert Zerrung */
     object-fit: cover; 
     border-radius: 8px;
 }
 
-.back-face {
-    background-color: var(--card-main-color); /* Rot */
-    color: var(--card-border-color); /* Gelb-Akzent */
-    border: 5px solid var(--card-border-color); /* Gelber Rand */
-    /* ... (Schraffur/Fuchs-Icon Stile bleiben) ... */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 3rem; 
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
-
-    /* Schraffur (Ihre Vorlage) */
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(255, 255, 255, 0.1) 0,
-        rgba(255, 255, 255, 0.1) 1px,
-        transparent 1px,
-        transparent 10px
-    );
-}
-
-.memory-card.flip, .memory-card.match {
-    transform: rotateY(180deg);
-}
-
-.memory-card.match {
-    /* Karten bleiben dauerhaft offen */
-    opacity: 1;
-    cursor: default;
-    box-shadow: 0 0 15px var(--secondary-color); 
-}
-
-/* --- NEU: Permanente Galerie (Galerieständer) --- */
+/* --- Permanente Galerie (Fotostrecke/Karteiständer) --- */
 .permanent-gallery-container {
     width: 100%;
     max-width: 900px;
@@ -185,13 +147,9 @@ body {
     text-align: center;
 }
 
-.permanent-gallery-container h2 {
-    color: var(--card-main-color);
-    margin-bottom: 10px;
-}
-
 #permanent-gallery {
-    display: flex;
+    display: flex; /* Für eine einzige, scrollbare Reihe */
+    flex-wrap: nowrap; /* Wichtig: Verhindert Umbruch in zwei Reihen */
     overflow-x: auto; /* Horizontal scrollbar */
     padding: 10px 0;
     gap: 15px;
@@ -202,21 +160,20 @@ body {
 
 .gallery-item {
     position: relative;
-    width: 100px;
-    height: 100px;
-    flex-shrink: 0; /* Verhindert das Schrumpfen */
+    /* Einheitliche, kleine Größe */
+    width: 100px; 
+    height: 100px; 
+    flex-shrink: 0; 
     border: 3px solid var(--secondary-color); 
     border-radius: 5px;
     cursor: pointer;
     background-color: var(--bg-light);
-    /* Animation: "Fliegt" vom Match-Overlay in den Ständer (simuliert) */
-    animation: fadeInScale 0.5s ease-out;
 }
 
 .gallery-item img {
     width: 100%;
     height: 100%;
-    /* Originalproportion in der Galerie-Vorschau */
+    /* Originalproportion in der Galerie-Vorschau (KEIN Crop) */
     object-fit: contain; 
 }
 
@@ -230,50 +187,36 @@ body {
     cursor: pointer;
     opacity: 0.8;
     z-index: 10;
+    transition: color 0.2s, opacity 0.2s;
 }
 
 .favorite-icon.active {
-    color: var(--card-main-color); /* Rot bei Aktivierung */
+    color: var(--card-main-color); /* Rot bei Favorit */
     opacity: 1;
 }
 
-/* NEU: Großansicht-Overlay */
-#image-detail-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    display: none; 
-    justify-content: center;
-    align-items: center;
-    z-index: 1001;
-}
-
+/* Großansicht-Overlay (Moderate Größe) */
 #image-detail-overlay.active {
     display: flex;
 }
 
 #detail-image {
+    /* Moderate Größe für Smartphones */
     max-width: 90vw;
-    max-height: 80vh;
+    max-height: 80vh; 
     object-fit: contain; /* Originalproportion */
 }
 
-.detail-content {
-    /* Setzt das Detail-Overlay-Content auf die richtige Farbe */
-    background-color: var(--bg-white);
-    padding: 30px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-    color: var(--primary-color);
+/* Match Success Overlay */
+#match-success-overlay {
+    /* Sicherstellen, dass dieses Overlay NICHT permanent sichtbar ist */
+    visibility: hidden;
+    opacity: 0;
 }
 
-@keyframes fadeInScale {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+#match-success-overlay.active {
+    visibility: visible;
+    opacity: 1;
 }
 
-/* ... (Media Queries bleiben wie in Ihrer Vorlage) ... */
+/* ... (Media Queries bleiben gleich) ... */
