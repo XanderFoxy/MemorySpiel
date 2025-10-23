@@ -6,9 +6,9 @@ const matchedImagePreview = document.getElementById('matched-image-preview');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
-const galleryImagesContainer = document.getElementById('gallery-images'); 
+const galleryImagesContainer = document.getElementById('gallery-images');
 
-// NEUE DOM-Elemente für die permanente Galerie
+// NEUE DOM-Elemente für die permanente Galerie und Großansicht
 const permanentGalleryContainer = document.getElementById('permanent-gallery-container');
 const permanentGallery = document.getElementById('permanent-gallery');
 const imageDetailOverlay = document.getElementById('image-detail-overlay');
@@ -28,7 +28,7 @@ let lockBoard = false;
 let firstCard, secondCard; 
 let moves = 0;
 let pairsFound = 0;
-let matchedImages = []; // Aktuell gesammelte Bilder dieses Spiels
+let matchedImages = []; // Aktuell gesammelte relative Pfade dieses Spiels
 
 const difficultyConfigs = {
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
@@ -37,10 +37,10 @@ const difficultyConfigs = {
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
 
-// Wichtig: Verwenden Sie den vollständigen Pfad, wenn Sie auf GitHub Pages hosten
+// WICHTIG: Korrekte BASE_URL für relative Pfade
 const BASE_URL = 'Bilder/'; 
-
-// --- Datenstrukturen (Mit neuen BabyFox-Dateien) ---
+// Wenn Sie die Bilder auf GitHub hosten, MUSS der Pfad 'https://xanderfoxy.github.io/MemorySpiel/Bilder/' sein. 
+// Ich verwende 'Bilder/' als Basis, da dies in den Ordnerstrukturen so aussieht.
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -66,7 +66,7 @@ function generateNumberedPaths(folderName, maxPossibleImages = 20) {
     return allNumbers;
 }
 
-// Kombination aus neuen manuellen und alten nummerierten Pfaden
+// Hier sind die erweiterten BabyFox-Pfade
 const BABYFOX_FILES = [
     'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
@@ -75,7 +75,6 @@ const BABYFOX_FILES = [
     'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
     ...generateNumberedPaths('BabyFox', 20)
 ];
-
 
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
@@ -94,11 +93,12 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt']; 
 
-// --- FAVORITEN UND GALERIE LOGIK ---
+// --- FAVORITEN UND GALERIE LOGIK (Local Storage) ---
 
 function getFavorites() {
     try {
         const favorites = localStorage.getItem('memoryFavorites');
+        // Gibt eine Liste der relativen Pfade zurück (z.B. ['BabyFox/1.jpg', ...])
         return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
     } catch (e) {
         return [];
@@ -114,7 +114,9 @@ function saveFavorites(favorites) {
 }
 
 function createGalleryItem(imagePath, isFavorite = false) {
+    // Erstellt den vollständigen Pfad für die Anzeige
     const fullSrc = `${BASE_URL}${imagePath}`;
+    
     const item = document.createElement('div');
     item.classList.add('gallery-item');
     item.dataset.path = imagePath; // Speichert den relativen Pfad für Local Storage
@@ -122,6 +124,7 @@ function createGalleryItem(imagePath, isFavorite = false) {
     const img = document.createElement('img');
     img.src = fullSrc;
     img.alt = 'Gefundenes Bild';
+    // object-fit: contain wird über CSS in .gallery-item img gesetzt
     item.appendChild(img);
 
     const icon = document.createElement('span');
@@ -132,11 +135,11 @@ function createGalleryItem(imagePath, isFavorite = false) {
 
     icon.addEventListener('click', (e) => {
         e.stopPropagation(); 
-        toggleFavorite(imagePath, icon);
+        toggleFavorite(imagePath, icon); // Verwendet den relativen Pfad
     });
     
     item.addEventListener('click', () => {
-        showImageDetail(fullSrc); // Übergibt den vollen Pfad zur Großansicht
+        showImageDetail(fullSrc); // Verwendet den vollen Pfad für die Großansicht
     });
 
     item.appendChild(icon);
@@ -174,15 +177,15 @@ function loadPermanentGallery() {
     const favorites = getFavorites();
     
     if (favorites.length > 0) {
-        // Erstellt Galerie-Items NUR aus Favoriten (welche im Local Storage gespeichert sind)
         favorites.forEach(path => {
-            // path ist hier bereits der relative Pfad (z.B. BabyFox/1.jpg)
+            // Erstellt Elemente mit dem gespeicherten relativen Pfad
             permanentGallery.appendChild(createGalleryItem(path, true)); 
         });
     } else {
          const message = document.createElement('p');
          message.textContent = "Markiere Bilder als Favoriten (❤️), um sie hier dauerhaft zu speichern.";
          message.style.color = 'var(--primary-color)';
+         message.style.marginTop = '10px';
          permanentGallery.appendChild(message);
     }
 }
@@ -200,12 +203,11 @@ function setupGame() {
     secondCard = null;
     moves = 0;
     pairsFound = 0;
-    matchedImages = []; // Reset der Matched Images für jedes neue Spiel
+    matchedImages = []; 
     
     matchSuccessOverlay.classList.remove('active');
     galleryOverlay.classList.remove('active');
     
-    // ... (Logik zur Auswahl der Karten bleibt gleich) ...
     const MAX_PAIRS = currentDifficulty.pairs; 
     
     statsMoves.textContent = `Züge: ${moves}`;
@@ -216,6 +218,7 @@ function setupGame() {
 
     let selectedPaths = [];
     
+    // ... (Logik zur Pfadauswahl bleibt gleich) ...
     if (currentThemeConfig.name === 'Gemixt') {
         const allPaths = [];
         ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
@@ -246,10 +249,9 @@ function setupGame() {
     gameCardValues.forEach(fullPath => { 
         const card = document.createElement('div');
         card.classList.add('memory-card');
-        card.dataset.path = fullPath; // Der relative Pfad (BabyFox/1.jpg)
+        card.dataset.path = fullPath; // Speichert den relativen Pfad
         
-        // BASE_URL wird hier nur zur Pfaderstellung für das Bild verwendet
-        const imageURL = `${BASE_URL}${fullPath}`; 
+        const imageURL = `${BASE_URL}${fullPath}`;
 
         card.innerHTML = `
             <img class="front-face" src="${imageURL}" alt="Memory Bild">
@@ -301,20 +303,22 @@ function disableCards() {
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
-    // NEU: Verwenden des dataset.path für Local Storage
+    // NEU: Verwenden des dataset.path (relativer Pfad)
     const matchedImagePath = firstCard.dataset.path;
-    const matchedImageSrc = `${BASE_URL}${matchedImagePath}`;
+    const matchedImageSrc = `${BASE_URL}${matchedImagePath}`; // Voller Pfad für die Vorschau
     
+    // Zeige das Overlay (Volltreffer)
     showMatchSuccess(matchedImageSrc);
     
-    // Nach dem Volltreffer-Overlay: Bild zur permanenten Galerie hinzufügen
+    // Nach dem Volltreffer-Overlay: Bild zur Galerie hinzufügen
     setTimeout(() => {
-        // Füge das BILD (relativer Pfad) zum Array der gefundenen Bilder des SPIELS hinzu (für das Glückwunsch-Overlay)
+        // Füge den relativen Pfad zum Array der gefundenen Bilder hinzu (für das Glückwunsch-Overlay)
         matchedImages.push(matchedImagePath);
         
-        // Fülle die permanente Galerie (die jetzt nur Favoriten zeigt)
+        // Aktualisiere die permanente Galerie, da ein neues Bild gefunden wurde.
+        // Das Bild wird beim Laden der Galerie sofort als Favorit angezeigt, wenn es markiert ist.
         loadPermanentGallery(); 
-    }, 1500); // Verzögerung von 1.5s nach Volltreffer
+    }, 1500); 
 
     resetBoard(); 
     
@@ -354,15 +358,23 @@ function gameOver() {
     galleryImagesContainer.innerHTML = '';
     
     // Die Galerie im Glückwunsch-Overlay wird mit allen gefundenen Bildern dieses Spiels gefüllt.
+    const favorites = getFavorites();
+    
     matchedImages.forEach(path => {
-        const item = createGalleryItem(path, getFavorites().includes(path));
-        // Entferne den Klick-Handler vom Icon, da wir hier kein Herz brauchen, nur die Ansicht
+        // Erstellt Galerie-Item für die Glückwunsch-Ansicht
+        const item = createGalleryItem(path, favorites.includes(path));
+        
+        // Entfernt den Klick-Handler und das Icon, da es im Endscreen nur zur Ansicht dient
         const icon = item.querySelector('.favorite-icon');
         if(icon) {
             icon.remove();
         }
+        item.removeEventListener('click', item.onclick);
+        
+        // Fügt das Element zur temporären Galerie im Overlay hinzu
         galleryImagesContainer.appendChild(item);
     });
+    
     galleryOverlay.classList.add('active');
 }
 
@@ -373,9 +385,11 @@ closeGalleryButton.addEventListener('click', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialisierung des Sliders und der Beschreibung
     const initialDifficulty = difficultyConfigs[difficultySlider.value];
     difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
     
+    // Setzt Gemixt als Standard-Theme
     const initialThemeButton = document.querySelector('.theme-button[data-theme="Gemixt"]');
     if (initialThemeButton) {
         themeButtons.forEach(btn => btn.classList.remove('active-theme'));
