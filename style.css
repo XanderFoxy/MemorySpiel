@@ -1,10 +1,16 @@
 :root {
-    --primary-color: #5d54a4; /* Dunkles Lila */
+    /* Farbpalette aufgeweicht */
+    --primary-color: #4a4387; /* Dunkles Lila */
     --secondary-color: #f7b731; /* Gelb-Orange */
     --text-color: #333;
-    --card-back-color: #4a4387;
-    --match-color: #38c738; /* Grün */
+    
+    /* NEUE KARTENFARBEN */
+    --card-back-color: #d9534f; /* Spielkarten-Rot */
+    --card-border-color: #fce892; /* Helles Gelb für den Rand */
+    --match-color: #5cb85c; /* Grün */
     --error-color: #ff3838; /* Rot */
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-strong: rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -15,28 +21,31 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    /* Sanfterer Hintergrund */
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
     color: var(--text-color);
     min-height: 100vh;
     padding: 20px;
 }
 
 .back-link {
-    position: absolute;
+    position: fixed; /* Besser für ein Spiel */
     top: 20px;
     left: 20px;
+    z-index: 100;
     text-decoration: none;
-    color: var(--primary-color);
-    font-size: 1.1rem;
+    color: white;
+    font-size: 1rem;
     padding: 8px 15px;
     border-radius: 25px;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: var(--primary-color);
+    box-shadow: 0 4px 10px var(--shadow-strong);
     transition: background-color 0.3s, transform 0.2s;
+    font-weight: 500;
 }
 
 .back-link:hover {
-    background-color: #f0f0f0;
+    background-color: #5d54a4;
     transform: translateY(-2px);
 }
 
@@ -47,17 +56,16 @@ body {
 .game-container {
     display: flex;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 40px auto 0; /* Mehr Platz oben */
     background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 20px; /* Abgerundeter */
+    box-shadow: 0 15px 40px var(--shadow-strong);
     overflow: hidden;
-    margin-top: 50px;
 }
 
 .sidebar {
     width: 250px;
-    background-color: var(--primary-color);
+    background: linear-gradient(180deg, var(--primary-color), #3a336e); /* Tieferer Look */
     color: white;
     padding: 30px 20px;
     text-align: center;
@@ -65,6 +73,7 @@ body {
 
 .sidebar h2 {
     margin-bottom: 25px;
+    color: var(--secondary-color);
     border-bottom: 2px solid var(--secondary-color);
     padding-bottom: 10px;
 }
@@ -75,26 +84,35 @@ body {
 }
 
 .theme-button {
-    background-color: var(--card-back-color);
+    background-color: #5d54a4;
     color: white;
     border: none;
     padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 8px;
+    margin-bottom: 15px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 1rem;
-    transition: background-color 0.3s, transform 0.2s;
+    font-weight: bold;
+    box-shadow: 0 4px 6px var(--shadow-light);
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
 }
 
 .theme-button:hover {
-    background-color: #f7b731; /* Secondary color on hover */
+    background-color: #5d54a4;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px var(--shadow-strong);
+}
+
+.theme-button.active-theme {
+    background-color: var(--secondary-color); /* Aktiver Button wird Gelb */
     color: var(--primary-color);
-    transform: translateX(5px);
+    box-shadow: 0 2px 4px var(--shadow-light);
+    transform: translateY(0);
 }
 
 .main-content {
     flex-grow: 1;
-    padding: 30px;
+    padding: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -102,43 +120,50 @@ body {
 
 .main-content h1 {
     color: var(--primary-color);
-    margin-bottom: 20px;
-    font-size: 2.5rem;
+    margin-bottom: 25px;
+    font-size: 3rem;
+    font-weight: 800;
+    text-shadow: 1px 1px 2px var(--shadow-light);
 }
 
 .stats {
     width: 100%;
-    max-width: 600px;
+    max-width: 650px;
     display: flex;
     justify-content: space-around;
-    padding: 15px;
+    padding: 15px 30px;
     margin-bottom: 30px;
-    background-color: #f0f4f8;
-    border-radius: 10px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-    font-size: 1.2rem;
+    background-color: var(--secondary-color);
+    border-radius: 15px;
+    box-shadow: 0 4px 10px var(--shadow-light);
+    font-size: 1.3rem;
     font-weight: bold;
+    color: var(--primary-color);
+    border: 3px solid #f9da9b;
 }
 
 .memory-grid {
     display: grid;
-    gap: 10px;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    max-width: 900px; 
+    /* Feste Größe für 4x6 (24 Karten) Grid */
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 15px; /* Größerer Abstand zwischen den Karten */
+    padding: 15px;
+    background-color: #e9ecef;
+    border-radius: 15px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 900px; /* Passt zur 6-Spalten-Struktur */
 }
 
 .memory-card {
     position: relative;
     perspective: 1000px;
-    width: 100px; 
-    height: 100px;
+    width: 120px; /* Karten leicht vergrößert */
+    height: 120px;
     cursor: pointer;
     transform-style: preserve-3d;
-    transition: transform 0.6s;
-    border-radius: 8px;
+    transition: transform 0.6s, box-shadow 0.3s;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px var(--shadow-light); /* Schönerer Kartenschatten */
 }
 
 /* Zustände der Karte */
@@ -148,12 +173,14 @@ body {
 
 .memory-card.match {
     pointer-events: none;
-    border: 3px solid var(--match-color);
+    border: 4px solid var(--match-color);
+    box-shadow: 0 0 15px var(--match-color);
     animation: pulseMatch 0.5s;
 }
 
 .memory-card.error {
-    border: 3px solid var(--error-color);
+    border: 4px solid var(--error-color);
+    box-shadow: 0 0 15px var(--error-color);
     animation: shakeError 0.5s;
 }
 
@@ -162,21 +189,22 @@ body {
     width: 100%;
     height: 100%;
     position: absolute;
-    border-radius: 8px;
+    border-radius: 10px; /* Etwas kleinerer Radius für den inneren Inhalt */
     backface-visibility: hidden;
+    overflow: hidden;
 }
 
 .front-face {
     transform: rotateY(180deg);
     background-color: white;
-    border: 1px solid #ddd;
+    border: 3px solid #ddd;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Croppt das Bild, um den Container auszufüllen, ohne es zu verzerren */
-    border-radius: 8px;
+    object-fit: cover;
+    border-radius: 8px; /* Inneres Bild leicht abgerundet */
 }
 
 .back-face {
@@ -184,10 +212,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 3rem;
-    color: white;
-    border: 3px solid var(--card-back-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    font-size: 4rem; /* Fuchs-Emoji größer */
+    color: var(--card-border-color); /* Farbe des Emojis */
+    /* Spielkarten-Design: Roter Hintergrund mit gelbem Rand */
+    border: 5px solid var(--card-border-color); 
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 /* OVERLAY (Match Success & Gallery) */
@@ -197,14 +226,14 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9); /* Dunklerer Hintergrund */
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
+    transition: opacity 0.4s, visibility 0.4s;
 }
 
 .overlay.active {
@@ -215,11 +244,12 @@ body {
 .overlay-content {
     background: white;
     padding: 40px;
-    border-radius: 15px;
+    border-radius: 20px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    transform: scale(0.8);
-    transition: transform 0.3s;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+    transform: scale(0.7);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Feder-Effekt */
+    max-width: 90%;
 }
 
 .overlay.active .overlay-content {
@@ -229,63 +259,134 @@ body {
 #match-success-overlay h2 {
     color: var(--match-color);
     margin-bottom: 20px;
+    font-size: 2rem;
 }
 
 #matched-image-preview {
-    max-width: 200px;
-    max-height: 200px;
-    border-radius: 8px;
-    border: 3px solid var(--secondary-color);
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 5px solid var(--secondary-color);
 }
 
 #gallery-overlay h2 {
     color: var(--primary-color);
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    font-size: 2.5rem;
 }
 
 #gallery-images {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    max-height: 400px;
+    gap: 15px;
+    margin-bottom: 30px;
+    max-height: 50vh;
     overflow-y: auto;
     padding: 10px;
 }
 
 #gallery-images img {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 5px;
-    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 4px 8px var(--shadow-light);
+    transition: transform 0.3s;
+}
+
+#gallery-images img:hover {
+    transform: scale(1.05);
 }
 
 #close-gallery {
     background-color: var(--secondary-color);
     color: var(--primary-color);
     border: none;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 12px 25px;
+    border-radius: 30px;
     cursor: pointer;
     font-weight: bold;
-    transition: opacity 0.3s;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px var(--shadow-light);
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #close-gallery:hover {
-    opacity: 0.9;
+    background-color: #fce892;
+    transform: translateY(-2px);
 }
 
 /* Animationen */
 @keyframes pulseMatch {
     0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    50% { transform: scale(1.03); }
     100% { transform: scale(1); }
 }
 
 @keyframes shakeError {
     0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .memory-card {
+        width: 100px; 
+        height: 100px;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-container {
+        flex-direction: column;
+        margin-top: 80px;
+        max-width: 95%;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .sidebar nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .theme-button {
+        flex: 1 1 45%; /* Lässt die Buttons zwei pro Reihe sein */
+        margin-bottom: 0;
+    }
+
+    .main-content {
+        padding: 20px;
+    }
+
+    .main-content h1 {
+        font-size: 2rem;
+    }
+
+    .memory-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4x6 ist zu eng auf kleinen Bildschirmen */
+        gap: 10px;
+    }
+    
+    .memory-card {
+        width: 70px; 
+        height: 70px;
+    }
+    
+    .back-face {
+        font-size: 2rem;
+    }
+    
+    .back-link {
+        position: absolute;
+    }
 }
