@@ -127,13 +127,13 @@ body {
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    max-width: 900px; /* Max-width für 6x4 Grid */
+    max-width: 900px; 
 }
 
 .memory-card {
     position: relative;
     perspective: 1000px;
-    width: 100px; /* Standardgröße für Karten */
+    width: 100px; 
     height: 100px;
     cursor: pointer;
     transform-style: preserve-3d;
@@ -169,14 +169,13 @@ body {
 .front-face {
     transform: rotateY(180deg);
     background-color: white;
-    object-fit: cover;
     border: 1px solid #ddd;
 }
 
 .front-face img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* Croppt das Bild, um den Container auszufüllen, ohne es zu verzerren */
     border-radius: 8px;
 }
 
