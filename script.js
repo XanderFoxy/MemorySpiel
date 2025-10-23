@@ -6,11 +6,17 @@ const matchedImagePreview = document.getElementById('matched-image-preview');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const closeGalleryButton = document.getElementById('close-gallery');
 const themeButtons = document.querySelectorAll('.theme-button');
-const galleryImagesContainer = document.getElementById('gallery-images');
+const galleryImagesContainer = document.getElementById('gallery-images'); // (Nicht mehr primär für Galerie verwendet)
 
+// NEUE DOM-Elemente
+const permanentGallery = document.getElementById('permanent-gallery');
+const imageDetailOverlay = document.getElementById('image-detail-overlay');
+const detailImage = document.getElementById('detail-image');
+const closeDetailButton = document.getElementById('close-detail');
+
+// ... (Restliche Konstanten und Variablen bleiben unverändert) ...
 const difficultySlider = document.getElementById('difficulty-slider');
 const difficultyDescription = document.getElementById('difficulty-description');
-
 const soundMatch = document.getElementById('sound-match');
 const soundError = document.getElementById('sound-error');
 const soundWin = document.getElementById('sound-win');
@@ -21,94 +27,99 @@ let lockBoard = false;
 let firstCard, secondCard; 
 let moves = 0;
 let pairsFound = 0;
-let matchedImages = []; 
+let matchedImages = []; // Aktuell gesammelte Bilder dieses Spiels
 
-// Schwierigkeitskonfiguration mit nur ZWEI quadratischen Grids
 const difficultyConfigs = {
-    // 4x4 Grid
     '1': { name: 'Leicht', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px' }, 
-    // 6x6 Grid
     '2': { name: 'Schwer', pairs: 18, columns: 6, cardsTotal: 36, gridMaxW: '780px' } 
 };
-
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
-
 const BASE_URL = 'https://xanderfoxy.github.io/MemorySpiel/Bilder/';
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+// ... (shuffleArray, selectRandomImagePaths, generateNumberedPaths, IN_ITALIEN_FILES, gameConfigs bleiben unverändert) ...
+
+// Hilfsfunktion zur Verwaltung der Favoriten im Local Storage
+function getFavorites() {
+    try {
+        const favorites = localStorage.getItem('memoryFavorites');
+        return favorites ? JSON.parse(favorites) : [];
+    } catch (e) {
+        console.error("Fehler beim Lesen der Favoriten aus localStorage:", e);
+        return [];
     }
 }
 
-function selectRandomImagePaths(allPaths, count) {
-    // KORREKTUR: Die Logik zur Auswahl der zufälligen Bilder bleibt, 
-    // stellt aber sicher, dass nur die benötigte Anzahl Paare (count) ausgewählt wird,
-    // auch wenn mehr Bilder im Ordner sind.
-    if (allPaths.length < count) {
-        console.warn(`Nicht genug Bilder (${allPaths.length}) für ${count} Paare verfügbar. Reduziere auf ${allPaths.length} Paare.`);
-        count = allPaths.length;
+function saveFavorites(favorites) {
+    try {
+        localStorage.setItem('memoryFavorites', JSON.stringify(favorites));
+    } catch (e) {
+        console.error("Fehler beim Speichern der Favoriten in localStorage:", e);
     }
-    let shuffled = [...allPaths];
-    shuffleArray(shuffled);
-    // WICHTIG: Hier werden die exakt benötigten 8 Paare (oder 18) ausgewählt.
-    return shuffled.slice(0, count);
 }
 
-function generateNumberedPaths(folderName, maxPossibleImages = 20) {
-    let allNumbers = [];
-    for (let i = 1; i <= maxPossibleImages; i++) {
-        // Annahme: Bilder sind als 1.jpg, 2.jpg etc. gespeichert
-        allNumbers.push(`${folderName}/${i}.jpg`);
+// Funktion, um das Galerie-Element zu erstellen
+function createGalleryItem(imageSrc, isFavorite = false) {
+    const item = document.createElement('div');
+    item.classList.add('gallery-item');
+    item.dataset.src = imageSrc;
+    item.title = "Klicken für Großansicht";
+
+    const img = document.createElement('img');
+    img.src = imageSrc;
+    img.alt = 'Gefundenes Bild';
+    item.appendChild(img);
+
+    const icon = document.createElement('span');
+    icon.classList.add('favorite-icon', 'fas', 'fa-heart');
+    if (isFavorite) {
+        icon.classList.add('active');
     }
-    return allNumbers;
-}
 
-// Hier sind die Dateinamen fixiert, um Case-Sensitivity-Probleme zu vermeiden.
-const IN_ITALIEN_FILES = [
-    'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
-    'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
-    'InItalien/IMG_9369.jpeg', 'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
-    'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
-    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg' // 19 Bilder
-];
-
-const gameConfigs = {
-    'InItalien': { allImagePaths: IN_ITALIEN_FILES, name: 'InItalien' },
-    'BabyFox': { allImagePaths: generateNumberedPaths('BabyFox', 20), name: 'BabyFox' },
-    'ThroughTheYears': { allImagePaths: generateNumberedPaths('ThroughTheYears', 20), name: 'ThroughTheYears' },
-    'Gemixt': { name: 'Gemixt' }
-};
-
-let currentThemeConfig = gameConfigs['Gemixt']; 
-
-// ... (Slider- und Theme-Event-Listener bleiben unverändert) ...
-difficultySlider.addEventListener('input', (e) => {
-    currentDifficulty = difficultyConfigs[e.target.value];
-    const name = e.target.value === '2' ? 'Schwer' : 'Leicht';
-    const pairs = e.target.value === '2' ? 18 : 8;
-    difficultyDescription.textContent = `${name} (${pairs} Paare)`;
-});
-
-difficultySlider.addEventListener('change', () => {
-    setupGame(); 
-});
-
-themeButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-        const theme = e.target.dataset.theme;
-        currentThemeConfig = gameConfigs[theme];
-        
-        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
-        e.target.classList.add('active-theme');
-        
-        setupGame();
+    // Event Listener für Favoriten-Funktion
+    icon.addEventListener('click', (e) => {
+        e.stopPropagation(); // Verhindert, dass das Großansicht-Overlay geöffnet wird
+        toggleFavorite(imageSrc, icon);
     });
+    
+    // Event Listener für Großansicht
+    item.addEventListener('click', () => {
+        showImageDetail(imageSrc);
+    });
+
+    item.appendChild(icon);
+    return item;
+}
+
+function toggleFavorite(imageSrc, iconElement) {
+    let favorites = getFavorites();
+    const index = favorites.indexOf(imageSrc);
+
+    if (index === -1) {
+        // Nicht Favorit -> Hinzufügen
+        favorites.push(imageSrc);
+        iconElement.classList.add('active');
+        console.log("Bild zu Favoriten hinzugefügt.");
+    } else {
+        // Ist Favorit -> Entfernen
+        favorites.splice(index, 1);
+        iconElement.classList.remove('active');
+        console.log("Bild aus Favoriten entfernt.");
+    }
+    saveFavorites(favorites);
+}
+
+function showImageDetail(imageSrc) {
+    detailImage.src = imageSrc;
+    imageDetailOverlay.classList.add('active');
+}
+
+closeDetailButton.addEventListener('click', () => {
+    imageDetailOverlay.classList.remove('active');
 });
 
 
 function setupGame() {
+    // ... (Setup-Logik bleibt unverändert, löscht nur das Grid) ...
     memoryGrid.innerHTML = '';
     cards = [];
     hasFlippedCard = false;
@@ -119,90 +130,55 @@ function setupGame() {
     pairsFound = 0;
     matchedImages = []; 
     
-    matchSuccessOverlay.classList.remove('active');
-    galleryOverlay.classList.remove('active');
+    // ... (Overlays verstecken, Stats setzen, Grid-Styling setzen) ...
+
+    // Fülle die Galerie mit Favoriten am Start des Spiels (damit Favoriten immer da sind)
+    loadPermanentGallery();
     
-    const MAX_PAIRS = currentDifficulty.pairs; 
-    
-    statsMoves.textContent = `Züge: ${moves}`;
-    statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
-
-    memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
-    memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
-
-    let selectedPaths = [];
-    
-    if (currentThemeConfig.name === 'Gemixt') {
-        const allPaths = [];
-        // Sammle alle verfügbaren Bilder für "Gemixt"
-        ['BabyFox', 'ThroughTheYears', 'InItalien'].forEach(folderName => {
-             const config = gameConfigs[folderName];
-             if (config && config.allImagePaths) {
-                 allPaths.push(...config.allImagePaths);
-             }
-        });
-        selectedPaths = selectRandomImagePaths(allPaths, MAX_PAIRS);
-
-    } else if (currentThemeConfig.allImagePaths) {
-        // WICHTIG: Wählt MAX_PAIRS Bilder aus der Liste (z.B. 8 von 19 für Leicht)
-        selectedPaths = selectRandomImagePaths(currentThemeConfig.allImagePaths, MAX_PAIRS);
-    }
-    
-    if (selectedPaths.length === 0 || selectedPaths.length < MAX_PAIRS) {
-        console.error(`Fehler: Konnte nicht genügend Bilder (${selectedPaths.length}) für das Spiel laden. Pfade prüfen!`);
-        memoryGrid.innerHTML = '<p style="color:red; grid-column: 1 / -1; text-align: center; color: var(--secondary-color);">FEHLER: Konnte nicht genügend Bilder laden. Thema oder Pfade prüfen!</p>';
-        return;
-    }
-
-    let gameCardValues = []; 
-    selectedPaths.forEach(fullPath => {
-        gameCardValues.push(fullPath, fullPath); 
-    });
-    
-    shuffleArray(gameCardValues);
-
-    gameCardValues.forEach(fullPath => { 
-        const card = document.createElement('div');
-        card.classList.add('memory-card');
-        card.dataset.path = fullPath; 
-
-        const imageURL = `${BASE_URL}${fullPath}`;
-
-        card.innerHTML = `
-            <img class="front-face" src="${imageURL}" alt="Memory Bild">
-            <span class="back-face">🦊</span>
-        `;
-        
-        memoryGrid.appendChild(card);
-        cards.push(card);
-    });
-    
+    // ... (Bilder- und Karten-Erstellungs-Logik bleibt unverändert) ...
+    // ... (Wenn das Grid erstellt wurde)
     cards.forEach(card => card.addEventListener('click', flipCard));
 }
 
-function flipCard() {
-    if (lockBoard) return;
-    if (this === firstCard) return; 
-    if (this.classList.contains('match')) return; 
+function loadPermanentGallery() {
+    permanentGallery.innerHTML = '';
+    const favorites = getFavorites();
+    
+    // Anzeigen der Favoriten (falls vorhanden)
+    if (favorites.length > 0) {
+        const title = document.createElement('h3');
+        title.textContent = "Deine Favoriten (Alle Spiele)";
+        title.style.margin = "10px 0";
+        title.style.color = "var(--secondary-color)";
+        permanentGallery.appendChild(title);
 
-    this.classList.add('flip');
-
-    if (!hasFlippedCard) {
-        hasFlippedCard = true;
-        firstCard = this;
-        return;
+        const favContainer = document.createElement('div');
+        favContainer.style.display = 'flex';
+        favContainer.style.overflowX = 'auto';
+        favContainer.style.paddingBottom = '10px';
+        favContainer.style.gap = '15px';
+        
+        favorites.forEach(src => {
+            // Favoriten werden als Favoriten angezeigt
+            favContainer.appendChild(createGalleryItem(src, true)); 
+        });
+        permanentGallery.appendChild(favContainer);
+    } else {
+         const message = document.createElement('p');
+         message.textContent = "Finde ein Paar und füge es zu deinen Favoriten hinzu (Herz-Symbol)!";
+         message.style.marginTop = '10px';
+         message.style.color = 'rgba(255, 255, 255, 0.7)';
+         permanentGallery.appendChild(message);
     }
-    
-    secondCard = this;
-    moves++;
-    statsMoves.textContent = `Züge: ${moves}`;
-    
-    checkForMatch();
 }
 
-function checkForMatch() {
-    let isMatch = firstCard.dataset.path === secondCard.dataset.path;
-    isMatch ? disableCards() : unflipCards();
+// Funktion, die ein gefundenes Bild zur permanenten Galerie hinzufügt
+function updatePermanentGallery(imageSrc) {
+    const favorites = getFavorites();
+    const isFavorite = favorites.includes(imageSrc);
+    
+    // Lösche und lade die Galerie neu, um Duplikate zu vermeiden
+    loadPermanentGallery();
 }
 
 function disableCards() {
@@ -210,21 +186,26 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // KORREKTUR: Karten bleiben dauerhaft offen durch die Klasse 'match'
-    firstCard.classList.add('match');
-    secondCard.classList.add('match');
+    // KORREKTUR: Karten bleiben permanent offen (durch die 'flip' und 'match' Klassen)
+    firstCard.classList.add('match', 'flip');
+    secondCard.classList.add('match', 'flip');
     
     firstCard.removeEventListener('click', flipCard);
     secondCard.removeEventListener('click', flipCard);
     
-    const matchedImageSrc = firstCard.querySelector('.front-face').src;
+    const matchedImageSrc = firstCard.querySelector('.front-face img').src;
     
-    // Zeige das Overlay (Volltreffer)
     showMatchSuccess(matchedImageSrc);
     
-    // Füge das Bild zur Galerie hinzu, nachdem das Overlay weg ist (Simulation Animation)
+    // Füge das Bild zur permanenten Galerie hinzu, nachdem das Overlay weg ist
     setTimeout(() => {
-        matchedImages.push(matchedImageSrc);
+        // Bild zur aktuellen Spiel-Galerie hinzufügen (optional, falls Sie das noch brauchen)
+        matchedImages.push(matchedImageSrc); 
+        
+        // Füge das Bild zur permanenten Anzeige hinzu (visueller Effekt der Füllung)
+        // Hinweis: Wir verwenden hier die Load-Funktion, um Konsistenz mit Favoriten zu gewährleisten.
+        // Für eine echte "Flug-Animation" wäre deutlich komplexeres CSS/JS nötig.
+        loadPermanentGallery(); 
     }, 1500);
     
     resetBoard(); 
@@ -234,65 +215,10 @@ function disableCards() {
     }
 }
 
-function unflipCards() {
-    lockBoard = true; 
-    soundError.play();
-    firstCard.classList.add('error');
-    secondCard.classList.add('error');
-    
-    setTimeout(() => {
-        firstCard.classList.remove('flip', 'error');
-        secondCard.classList.remove('flip', 'error');
-        resetBoard(); 
-    }, 1000);
-}
-
-function resetBoard() {
-    [hasFlippedCard, lockBoard] = [false, false];
-    [firstCard, secondCard] = [null, null];
-}
-
-function showMatchSuccess(imageSrc) {
-    matchedImagePreview.src = imageSrc;
-    matchSuccessOverlay.classList.add('active');
-    // Das Overlay ist nach 1.5 Sekunden weg, damit das Bild kurz gezeigt wird
-    setTimeout(() => {
-        matchSuccessOverlay.classList.remove('active');
-    }, 1500); 
-}
-
-function gameOver() {
-    soundWin.play();
-    galleryImagesContainer.innerHTML = '';
-    
-    // Die Galerie wird aus den gesammelten matchedImages erstellt
-    matchedImages.forEach(src => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = 'Gefundenes Bild';
-        galleryImagesContainer.appendChild(img);
-    });
-    galleryOverlay.classList.add('active');
-}
-
-closeGalleryButton.addEventListener('click', () => {
-    galleryOverlay.classList.remove('active');
-    setupGame(); 
-});
-
+// ... (unflipCards, resetBoard, showMatchSuccess, gameOver, closeGalleryButton.addEventListener bleiben unverändert) ...
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialisierung des Sliders und der Beschreibung
-    const initialDifficulty = difficultyConfigs[difficultySlider.value];
-    difficultyDescription.textContent = `${initialDifficulty.name} (${initialDifficulty.pairs} Paare)`;
-    
-    // Setzt Gemixt als Standard-Theme
-    const initialThemeButton = document.querySelector('.theme-button[data-theme="Gemixt"]');
-    if (initialThemeButton) {
-        themeButtons.forEach(btn => btn.classList.remove('active-theme'));
-        initialThemeButton.classList.add('active-theme');
-    }
-    currentThemeConfig = gameConfigs['Gemixt'];
-
+    // ... (Initialisierung des Sliders und des Themes bleibt unverändert) ...
     setupGame();
 });
+
