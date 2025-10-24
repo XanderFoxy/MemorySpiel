@@ -1,5 +1,7 @@
-// Globale Abhängigkeiten: difficultyNote, POST_IT_CLOSED_KEY
-// Die Variable 'isPostItClosed' wird global im window-Scope von diesem Skript verwaltet.
+// ==============================================================================
+// 📄 postit.js
+// Verwaltet den Zustand und die Animation des Post-it-Hinweises.
+// ==============================================================================
 
 const POST_IT_CLOSED_KEY = 'memoryPostItClosed'; 
 
@@ -11,49 +13,68 @@ function getPostItClosedStatus() {
 }
 
 /**
- * Speichert den Status, dass das Post-it geschlossen wurde.
+ * Speichert den Status, dass das Post-it geschlossen wurde und steuert die Animation.
  * Diese Funktion wird auch von script.js aufgerufen, wenn der erste Zug erfolgt.
  */
 function setPostItClosedStatus(isClosed) {
+    const difficultyNoteElement = document.getElementById('difficulty-note');
+    
+    if (!difficultyNoteElement) return;
+
     if (isClosed) {
         localStorage.setItem(POST_IT_CLOSED_KEY, 'true');
+        window.isPostItClosed = true; 
+        
+        // Prüfen, ob bereits hidden, um Animation zu vermeiden
+        if (!difficultyNoteElement.classList.contains('hidden-by-default')) {
+            // Abreiß-Animation starten
+            difficultyNoteElement.classList.add('ripped');
+            
+            // Nach der Animation (0.7s) aus dem DOM entfernen und Reset
+            setTimeout(() => {
+                difficultyNoteElement.classList.add('hidden-by-default');
+                difficultyNoteElement.classList.remove('ripped'); // Animation zurücksetzen
+            }, 700); // Muss länger sein als die CSS-Transition (0.3s + 0.4s)
+        } else {
+             // Wenn bereits versteckt, nur Status setzen
+             difficultyNoteElement.classList.add('hidden-by-default');
+        }
+
     } else {
         localStorage.removeItem(POST_IT_CLOSED_KEY);
+        window.isPostItClosed = false; 
+        
+        // Post-it visuell wiederherstellen (wird in script.js beim Start gesteuert)
+        difficultyNoteElement.classList.remove('hidden-by-default');
     }
 }
 
 
-// Event Listener für den Post-it Schließen Button
+// Event Listener für die Post-it Ecke
 document.addEventListener('DOMContentLoaded', () => {
-    const difficultyNoteElement = document.getElementById('difficulty-note');
-    const closePostItButtonElement = document.getElementById('close-post-it');
+    const postItCornerElement = document.querySelector('.post-it-corner');
     
-    // Initialisiere die globale Variable (window.isPostItClosed)
+    // Initialisiere die globale Variable 
     window.isPostItClosed = getPostItClosedStatus();
     
     // Mache die setPostItClosedStatus Funktion global verfügbar für script.js
     window.setPostItClosedStatus = setPostItClosedStatus;
+    
+    // Post-it initial verstecken, wenn es geschlossen wurde
+    const difficultyNoteElement = document.getElementById('difficulty-note');
+    if (difficultyNoteElement && window.isPostItClosed) {
+         difficultyNoteElement.classList.add('hidden-by-default');
+    }
 
-    if (closePostItButtonElement && difficultyNoteElement) {
+    if (postItCornerElement) {
         
-        closePostItButtonElement.addEventListener('click', (e) => {
+        // Klick auf die Ecke löst die Schließ- und Abreiß-Logik aus
+        postItCornerElement.addEventListener('click', (e) => {
             e.stopPropagation();
-            
-            // Post-it visuell ausblenden (Animation)
-            difficultyNoteElement.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-in';
-            difficultyNoteElement.style.opacity = '0';
-            difficultyNoteElement.style.transform = 'rotate(10deg) translateX(100px) translateY(-50px)';
-            
-            // Nach der Animation ausblenden und Status speichern
-            setTimeout(() => {
-                difficultyNoteElement.classList.add('hidden-by-default');
-                difficultyNoteElement.style.transition = 'none'; 
-                difficultyNoteElement.style.transform = 'rotate(2deg)'; // Reset für das nächste Spiel
-                
-                // Globale Variable und localStorage aktualisieren
-                window.isPostItClosed = true; 
-                setPostItClosedStatus(true);
-            }, 500); 
+            setPostItClosedStatus(true);
         });
     }
 });
+
+// Post-it Klick-Logik (Klick auf den Body des Zettels schließt ihn nicht, nur die Ecke)
+// Das wird in der script.js geregelt, wenn window.gameStarted = true gesetzt wird.
