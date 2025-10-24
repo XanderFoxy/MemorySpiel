@@ -48,7 +48,9 @@ const difficultyConfigs = {
     '3': { name: 'Schwer', description: 'Nach jedem Zug (unabhängig vom Match) werden alle restlichen Karten neu gemischt. Maximale Herausforderung!', pairs: 8, columns: 4, cardsTotal: 16, gridMaxW: '520px', logic: 'shuffleAlways' }
 };
 
-window.currentDifficulty = difficultyConfigs[difficultySlider.value]; 
+// 🛑 KORREKTUR: Diese Zeile wurde entfernt, da difficultySlider.value beim Laden des Skripts noch nicht verfügbar ist.
+// window.currentDifficulty = difficultyConfigs[difficultySlider.value]; 
+window.currentDifficulty = null; // Auf null setzen, wird im DOMContentLoaded initialisiert
 
 // Korrigierte Ordnerpfade (Großschreibung beachten!)
 const BASE_URL = 'Bilder/'; 
@@ -189,7 +191,8 @@ function setupGame(isNewGame = true) {
         cards.push(card);
     });
     
-    if (typeof localStorage.setItem === 'function') {
+    // Nur setzen, wenn generateGameId existiert (aus Storage.js)
+    if (typeof localStorage.setItem === 'function' && typeof generateGameId === 'function') {
         localStorage.setItem(CURRENT_GAME_ID_KEY, generateGameId());
     }
 }
@@ -389,23 +392,16 @@ function resetBoard() {
 function gameOver() {
     soundWin.play();
     
-    const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
-    const uniqueMatchedImages = [...new Set(window.matchedImages)];
-    
-    // History-Update (Funktion aus Storage.js)
-    if (typeof updateHistory === 'function') {
+    // Nur ausführen, wenn die Funktionen existieren
+    if (typeof updateHistory === 'function' && typeof showGameOverGallery === 'function' && typeof clearCurrentGameData === 'function' && typeof generateGameId === 'function') {
+        const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
+        const uniqueMatchedImages = [...new Set(window.matchedImages)];
+        
         updateHistory(gameId, window.currentTheme, window.moves, window.currentDifficulty.pairs, uniqueMatchedImages, true);
-    }
-
-    // UI-Update (Funktion aus UI.js)
-    if (typeof showGameOverGallery === 'function') {
-         showGameOverGallery(window.matchedImages);
-    }
-    
-    // Clear Storage (Funktion aus Storage.js)
-    if (typeof clearCurrentGameData === 'function') {
+        showGameOverGallery(window.matchedImages);
         clearCurrentGameData(); 
     }
+
     window.gameStarted = false;
 }
 
@@ -413,6 +409,13 @@ function gameOver() {
  * Lädt ein gespeichertes Spiel oder startet neu.
  */
 function loadOrStartGame() {
+    // Stellen Sie sicher, dass die nötigen Funktionen existieren
+    if (typeof loadCurrentGameData !== 'function' || typeof updateDifficultyDisplay !== 'function' || typeof loadPermanentGallery !== 'function') {
+         console.error("Kann Spiel nicht laden. Eine Funktion aus Storage.js/UI.js/Slider.js fehlt.");
+         setupGame(true);
+         return false;
+    }
+    
     // 1. Daten aus Storage laden (Funktion aus Storage.js)
     const gameState = loadCurrentGameData();
     
@@ -428,9 +431,7 @@ function loadOrStartGame() {
     difficultySlider.value = gameState.difficulty;
     
     // Update Slider-UI (Funktion aus Slider.js)
-    if (typeof updateDifficultyDisplay === 'function') {
-        updateDifficultyDisplay(false); 
-    }
+    updateDifficultyDisplay(false); 
 
     window.moves = gameState.moves;
     window.pairsFound = gameState.pairsFound;
@@ -471,9 +472,7 @@ function loadOrStartGame() {
     });
 
     // UI-Update (Funktion aus UI.js)
-    if (typeof loadPermanentGallery === 'function') {
-        loadPermanentGallery();
-    }
+    loadPermanentGallery();
     resetBoard();
     return true;
 }
@@ -481,6 +480,15 @@ function loadOrStartGame() {
 
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // 🛑 KORREKTUR: window.currentDifficulty MUSS hier initialisiert werden, 
+    // nachdem difficultySlider im DOM gefunden wurde.
+    if (difficultySlider && difficultySlider.value) {
+        window.currentDifficulty = difficultyConfigs[difficultySlider.value]; 
+    } else {
+        // Fallback, wenn der Slider aus irgendeinem Grund nicht gefunden wird
+        window.currentDifficulty = difficultyConfigs['1']; 
+    }
     
     // Event Listener für Overlays (jetzt hier, da es die DOM-Struktur betrifft)
     [imageDetailOverlay, historyOverlay, historyGameDetailOverlay].forEach(overlay => {
@@ -517,8 +525,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Unvollständiges Spiel speichern (History-Update aus Storage.js)
             if (window.gameStarted && window.pairsFound < window.currentDifficulty.pairs && typeof updateHistory === 'function') {
-                 const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
-                 updateHistory(gameId, window.currentTheme, window.moves, window.currentDifficulty.pairs, [...new Set(window.matchedImages)], false);
+                 // gameId und generateGameId müssen aus Storage.js stammen
+                 const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || (typeof generateGameId === 'function' ? generateGameId() : null); 
+                 if (gameId) {
+                    updateHistory(gameId, window.currentTheme, window.moves, window.currentDifficulty.pairs, [...new Set(window.matchedImages)], false);
+                 }
             }
             
             window.currentTheme = newTheme;
