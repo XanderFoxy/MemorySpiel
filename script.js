@@ -77,28 +77,22 @@ const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId';
 const POST_IT_CLOSED_KEY = 'memoryPostItClosed'; 
 
 
-// --- DATENSTRUKTUREN (Ordnerverzeichnisse sind jetzt klein geschrieben) ---
-// ANPASSUNG: Ordnernamen werden kleingeschrieben, da dies explizit gewünscht wurde.
+// --- DATENSTRUKTUREN (Ordnerverzeichnisse sind Immer groß geschrieben) ---
+// ANPASSUNG: Ordnernamen werden Groß geschrieben, da Github Case sensitiv ist Und damit die Ansicht immer stimmt.
 const IN_ITALIEN_FILES = [
-    'initalien/Al ven77.jpeg', 'initalien/IMG_0051.jpeg', 'initalien/IMG_0312.jpeg', 'initalien/IMG_6917.jpeg',
-    'initalien/IMG_8499.jpeg', 'initalien/IMG_9287.jpeg', 'initalien/IMG_9332.jpeg', 'initalien/IMG_9352.jpeg',
-    'initalien/IMG_9369.jpeg', 'initalien/IMG_9370.jpeg', 'initalien/IMG_9470.jpeg', 'initalien/IMG_9480.jpeg',
-    'initalien/IMG_9592.jpeg', 'initalien/IMG_9593.jpeg', 'initalien/IMG_9594.jpeg', 'initalien/IMG_9597.jpeg',
-    'initalien/IMG_9598.jpeg', 'initalien/IMG_9599.jpeg', 'initalien/QgNsMtTA.jpeg', 
-    'initalien/extra1.jpeg', 'initalien/extra2.jpeg', 'initalien/extra3.jpeg', 
-    'initalien/extra4.jpeg', 'initalien/extra5.jpeg' 
+    'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
+    'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
+    'InItalien/IMG_9369.jpeg', 'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
+    'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
+    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg'
 ];
 
 const BABYFOX_FILES = [
-    'babyfox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
-    'babyfox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
-    'babyfox/IMG_0688.jpeg', 
-    'babyfox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
-    'babyfox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
-    'babyfox/1.jpg', 'babyfox/2.jpg', 'babyfox/3.jpg', 'babyfox/4.jpg', 'babyfox/5.jpg', 
-    'babyfox/6.jpg', 'babyfox/7.jpg', 'babyfox/8.jpg', 'babyfox/9.jpg', 'babyfox/10.jpg',
-    'babyfox/11.jpg', 'babyfox/12.jpg', 'babyfox/13.jpg', 'babyfox/14.jpg', 'babyfox/15.jpg',
-    'babyfox/16.jpg', 'babyfox/17.jpg', 'babyfox/18.jpg', 'babyfox/19.jpg', 'babyfox/20.jpg'
+    'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
+    'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
+    'BabyFox/IMG_0688.jpeg', 
+    'BabyFox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
+    'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg'
 ];
 
 const THROUGH_THE_YEARS_FILES = [
