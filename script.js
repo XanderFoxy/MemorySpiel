@@ -64,13 +64,15 @@ const difficultyConfigs = {
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
-const BASE_URL = 'Bilder/'; 
+const BASE_URL = 'bilder/'; // HINWEIS: Ordnerverzeichnisse sind laut Ihrer Vorgabe immer komplett klein geschrieben
 const CURRENT_GAME_STORAGE_KEY = 'memoryCurrentGame';
 const FAVORITES_STORAGE_KEY = 'memoryFavorites';
 const HISTORY_STORAGE_KEY = 'memoryHistory';
 const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId'; // Für eindeutige Speicherung
 
 // --- DATENSTRUKTUREN (VOLLSTÄNDIG) ---
+// HINWEIS: Die Pfade werden von BASE_URL + Pfad zusammengesetzt. Daher sind die Unterordner hier großgeschrieben, da sie Teil des Dateinamens sind.
+
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
     'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
@@ -110,7 +112,7 @@ const gameConfigs = {
 
 let currentThemeConfig = gameConfigs['Gemixt'];
 
-// --- FAVORITEN & GALERIE LOGIK ---
+// --- FAVORITEN & GALERIE LOGIK (Unverändert, war korrekt) ---
 
 function getFavorites() {
     try {
@@ -141,7 +143,8 @@ function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
     const img = document.createElement('img');
     img.src = fullSrc;
     img.alt = 'Gefundenes Bild';
-    // object-fit: contain ist jetzt im CSS für .gallery-item img
+    // CSS-Regel .gallery-item img sorgt für object-fit: contain
+
     item.appendChild(img);
 
     if (showHeart) {
@@ -180,9 +183,19 @@ function toggleFavorite(imagePath, iconElement) {
     saveFavorites(favorites);
     loadPermanentGallery(); 
     
-    // Update Favoritenstatus in der aktuellen Tagesgalerie
+    // Update Favoritenstatus in der aktuellen Tagesgalerie und im History Detail
     const dailyItems = dailyMatchesGallery.querySelectorAll(`[data-path="${imagePath}"] .favorite-icon`);
     dailyItems.forEach(icon => {
+        if (index === -1) {
+            icon.classList.add('active');
+        } else {
+            icon.classList.remove('active');
+        }
+    });
+    
+    // Update im History-Detail (falls offen)
+    const historyDetailItems = historyGameGallery.querySelectorAll(`[data-path="${imagePath}"] .favorite-icon`);
+    historyDetailItems.forEach(icon => {
         if (index === -1) {
             icon.classList.add('active');
         } else {
@@ -208,6 +221,7 @@ function loadPermanentGallery() {
          permanentGallerySidebar.appendChild(message);
     } else {
         favorites.forEach(path => {
+            // Favoriten in der Sidebar mit Herz
             permanentGallerySidebar.appendChild(createGalleryItem(path, true, true)); 
         });
     }
@@ -227,7 +241,7 @@ function loadPermanentGallery() {
     }
 }
 
-// --- SPIELLOGIK & UX FUNKTIONEN ---
+// --- SPIELLOGIK & UX FUNKTIONEN (Unverändert, war korrekt) ---
 
 function generateGameId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
@@ -413,7 +427,6 @@ function shuffleCardsArray(array) {
  * Mischt alle NICHT gefundenen Karten neu und ordnet das Grid neu an.
  */
 function reShuffleRemainingCards() {
-    // ... (Code unverändert, da die Logik für das Mischen korrekt war)
     const currentCards = Array.from(memoryGrid.querySelectorAll('.memory-card'));
     
     const matchedCardData = currentCards
@@ -459,7 +472,7 @@ function reShuffleRemainingCards() {
 }
 
 function flipCard() {
-    if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active')) {
+    if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active') || historyGameDetailOverlay.classList.contains('active')) {
         return;
     }
     
@@ -567,7 +580,7 @@ function resetBoard() {
 }
 
 function showMatchSuccessAndAnimate(imageSrc, imagePath) {
-    // ... (Logik unverändert, da die Animation gut funktioniert)
+    // Die Animation ist korrekt und wird beibehalten
     matchedImagePreview.src = imageSrc;
     
     const mainContentRect = mainContent.getBoundingClientRect();
@@ -577,8 +590,16 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
     
     matchSuccessOverlay.style.width = `${popupWidth}px`;
     matchSuccessOverlay.style.height = `${popupHeight}px`;
-    matchSuccessOverlay.style.top = `${(mainContentRect.height - popupHeight) / 2}px`;
-    matchSuccessOverlay.style.left = `${(mainContentRect.width - popupWidth) / 2}px`;
+    
+    // Positionierung relativ zum Main Content
+    const mainContentTop = mainContent.offsetTop;
+    const mainContentLeft = mainContent.offsetLeft;
+
+    matchSuccessOverlay.style.top = `${mainContentTop + (mainContentRect.height - popupHeight) / 2}px`;
+    matchSuccessOverlay.style.left = `${mainContentLeft + (mainContentRect.width - popupWidth) / 2}px`;
+    
+    // Sicherstellen, dass die Z-Index-Logik beachtet wird
+    matchSuccessOverlay.style.position = 'fixed'; 
     matchSuccessOverlay.classList.add('active');
     
     setTimeout(() => {
@@ -590,23 +611,26 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
         animatedThumbnail.src = imageSrc;
         animatedThumbnail.classList.remove('hidden-by-default');
         
+        // Startposition der Animation
         animatedThumbnail.style.width = `${matchRect.width - 20}px`; 
         animatedThumbnail.style.height = `${matchRect.height - 20}px`; 
-        animatedThumbnail.style.top = `${matchRect.top - mainContentRect.top + 10}px`; 
-        animatedThumbnail.style.left = `${matchRect.left - mainContentRect.left + 10}px`;
+        animatedThumbnail.style.top = `${matchRect.top}px`; 
+        animatedThumbnail.style.left = `${matchRect.left}px`;
         animatedThumbnail.style.opacity = 1;
         animatedThumbnail.style.transition = 'all 0.8s cubic-bezier(0.5, 0.0, 0.5, 1.0)';
 
         
         loadPermanentGallery(); 
         
+        // Finde das Ziel-Element NACH dem Aufruf von loadPermanentGallery
         const newTarget = dailyMatchesGallery.querySelector(`[data-path="${imagePath}"]`);
         
         if (newTarget) {
             const targetRect = newTarget.getBoundingClientRect();
             
-            const targetX = targetRect.left - mainContentRect.left;
-            const targetY = targetRect.top - mainContentRect.top;
+            // Endposition der Animation (Absolute Position im Viewport)
+            const targetX = targetRect.left;
+            const targetY = targetRect.top;
 
             animatedThumbnail.style.width = `${targetRect.width}px`; 
             animatedThumbnail.style.height = `${targetRect.height}px`; 
@@ -653,12 +677,12 @@ function gameOver() {
 
 function showImageDetail(fullSrc) {
     detailImage.src = fullSrc;
-    // Setze das Overlay immer auf feste Position, um nicht mit main-content zu verschwinden
+    // Position: fixed ist wichtig für Overlays, die den Viewport abdecken
     imageDetailOverlay.style.position = 'fixed'; 
     imageDetailOverlay.classList.add('active');
 }
 
-// History-Logik
+// History-Logik (Korrigiert/Hinzugefügt)
 /**
  * Speichert ein Spiel im Verlauf, fügt einen neuen Eintrag hinzu oder aktualisiert einen bestehenden, wenn das Spiel abgeschlossen wurde.
  */
@@ -745,6 +769,7 @@ function showHistory() {
     historyOverlay.classList.add('active');
 }
 
+// Funktion für History Detailansicht (Neu)
 function viewHistoryGameDetails(gameEntry) {
     historyGameGallery.innerHTML = '';
     historyDetailDate.textContent = `${gameEntry.date} (${gameEntry.theme}, ${gameEntry.completed ? 'Komplett' : 'Unvollständig'})`;
@@ -765,7 +790,7 @@ function viewHistoryGameDetails(gameEntry) {
     historyGameDetailOverlay.classList.add('active');
 }
 
-// --- SLIDER FUCHS LOGIK & DESIGN ---
+// --- SLIDER FUCHS LOGIK & DESIGN (Korrigiert) ---
 function updateDifficultyDisplay(animate = true) {
     const min = parseFloat(difficultySlider.min);
     const max = parseFloat(difficultySlider.max);
@@ -774,9 +799,8 @@ function updateDifficultyDisplay(animate = true) {
     // Berechne den korrigierten Prozentsatz für 3 Stufen
     const correctedPercentage = (val - min) / (max - min) * 100;
 
-    // Aktualisiere die Position des Fuchs-Emojis
-    const offset = 10; // Halbe Breite des Fuchses
-    foxHeadSlider.style.left = `calc(${correctedPercentage}% - ${offset}px)`;
+    // KORREKTUR: Die Position des Fuchses muss mit 50% für die Mitte korrigiert werden, da der CSS-Transform auf -50% translateX setzt.
+    foxHeadSlider.style.left = `${correctedPercentage}%`;
     
     currentDifficulty = difficultyConfigs[val];
     
@@ -784,17 +808,16 @@ function updateDifficultyDisplay(animate = true) {
     difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
     
     // Aktualisiere den dynamischen Farbverlauf der Schiebeleiste
-    // 1 (Grün) -> 2 (Orange) -> 3 (Rot)
     let colorStart, colorEnd;
     if (val == 1) {
-        colorStart = 'var(--match-color)'; // Grün
+        colorStart = 'var(--match-color)'; 
         colorEnd = 'var(--match-color)';
     } else if (val == 2) {
         colorStart = 'var(--match-color)';
-        colorEnd = 'var(--wait-color)'; // Orange
+        colorEnd = 'var(--wait-color)'; 
     } else {
         colorStart = 'var(--wait-color)';
-        colorEnd = 'var(--error-color)'; // Rot
+        colorEnd = 'var(--error-color)'; 
     }
     
     // Erstelle den Verlauf basierend auf dem aktuellen Wert
@@ -804,9 +827,9 @@ function updateDifficultyDisplay(animate = true) {
 
     if (animate) {
          foxHeadSlider.style.opacity = 1;
-         setTimeout(() => { foxHeadSlider.style.opacity = 0.8; }, 200); // Bleibt sichtbar
+         setTimeout(() => { foxHeadSlider.style.opacity = 0.8; }, 200); 
     } else {
-         foxHeadSlider.style.opacity = 0.8; // Standard-Sichtbarkeit
+         foxHeadSlider.style.opacity = 0.8; 
     }
 }
 
@@ -823,6 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Schließen des History Detail Overlays
     document.querySelector('.close-history-detail').addEventListener('click', () => {
          historyGameDetailOverlay.classList.remove('active');
     });
