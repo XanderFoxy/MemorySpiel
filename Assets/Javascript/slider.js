@@ -1,112 +1,86 @@
-/* Slider Design */
-.difficulty-slider-container {
-    position: relative;
-    padding: 30px 5px 15px; 
-}
-#fox-head-slider {
-    position: absolute;
-    top: 20px; 
-    transform: translateY(-50%) translateX(-50%); /* Zentrieren des Fuchskopfes */
-    font-size: 1.8rem;
-    pointer-events: none; 
-    color: var(--secondary-color);
-    text-shadow: 0 0 5px var(--primary-color);
-    z-index: 10;
-    opacity: 0.8; 
-    transition: left 0.2s ease-out, opacity 0.5s;
-    background-color: var(--secondary-color);
-    border-radius: 50%;
-    padding: 5px;
-    border: 3px solid var(--card-main-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-    line-height: 1; 
+// ==============================================================================
+// 📄 slider.js
+// Verwaltet die visuelle Darstellung des Schwierigkeitssliders und des Fuchskopfs.
+// ==============================================================================
+
+/**
+ * Berechnet die genaue Position des Fuchskopfes und setzt den Farbverlauf.
+ * @param {boolean} updatePostit - Steuert, ob das Post-it aktualisiert werden soll.
+ */
+function updateDifficultyDisplay(updatePostit = true) {
+    const slider = document.getElementById('difficulty-slider');
+    const foxHead = document.getElementById('fox-head-slider');
+    const postitDescription = document.getElementById('difficulty-description-postit');
+
+    if (!slider || !foxHead) return;
+
+    const value = parseInt(slider.value);
+    const min = parseInt(slider.min); // 1
+    const max = parseInt(slider.max); // 3
+
+    // Berechne den Prozentsatz: 0% bei min, 50% bei 2, 100% bei max
+    const percentage = ((value - min) / (max - min)) * 100;
+
+    // Fuchskopf-Positionierung
+    // Der Offset von 8px korrigiert die Zentrierung des Fuchskopfes über dem Thumb.
+    // Der Fox Head muss sich von 0% bis 100% bewegen.
+    foxHead.style.left = `calc(${percentage}% - 8px)`; 
+    
+    // Hintergrundfarbe-Verlauf (Gelb -> Orange -> Rot)
+    let fillStyle;
+    
+    // Die Farb-Variablen müssen in style.css definiert sein:
+    // --match-color (Leicht/Gelb), --wait-color (Mittel/Orange), --error-color (Schwer/Rot)
+    const easyColor = 'var(--match-color)'; 
+    const mediumColor = 'var(--wait-color)'; 
+    const hardColor = 'var(--error-color)'; 
+    
+    // Linearen Farbverlauf von 0% bis zur aktuellen Position erstellen.
+    if (percentage <= 50) {
+        // Übergang von Leicht (Gelb, 0%) zu Mittel (Orange, 50%)
+        const progress = percentage * 2; // Skaliert von 0-100%
+        fillStyle = `linear-gradient(to right, ${easyColor} 0%, ${mediumColor} ${progress}%, var(--button-bg-inactive) ${progress}%)`;
+    } else {
+        // Übergang von Mittel (Orange, 50%) zu Schwer (Rot, 100%)
+        // Die ersten 50% sind bereits Orange. Jetzt den Übergang von 50% bis 100% berechnen.
+        const progress = (percentage - 50) * 2; // Skaliert von 0-100%
+        fillStyle = `linear-gradient(to right, ${easyColor} 0%, ${mediumColor} 50%, ${hardColor} ${50 + (progress / 2)}%, var(--button-bg-inactive) ${percentage}%)`;
+    }
+    
+    // Den Farbverlauf anwenden
+    slider.style.backgroundImage = fillStyle;
+
+
+    // Post-it Beschreibung aktualisieren
+    if (updatePostit && window.currentDifficulty && postitDescription) {
+         postitDescription.innerHTML = `**${window.currentDifficulty.name}:** ${window.currentDifficulty.description}`;
+    }
 }
 
-#difficulty-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 10px;
-    background: var(--button-bg-inactive);
-    border-radius: 5px;
-    outline: none;
-    /* --slider-fill kommt aus style.css und wird per JS gesetzt */
-    background-image: var(--slider-fill); 
-    transition: background-image 0.2s; 
-}
-#difficulty-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 0; 
-    height: 0;
-    cursor: pointer;
-}
-.slider-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-    font-size: 0.8em;
-    color: white;
-    position: relative;
-    padding: 0 5px;
-    font-weight: bold;
-}
-.slider-labels span:nth-child(2) {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--wait-color);
-}
-#label-easy { color: var(--match-color); }
-#label-hard { color: var(--error-color); }
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('difficulty-slider');
+    
+    if (slider && window.difficultyConfigs) {
+        
+        // Initialer Aufruf beim Laden (setzt Fuchskopf und Farbe)
+        updateDifficultyDisplay(false); 
 
-/* Post-it Notiz Stil */
-.post-it-note {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    max-width: 250px;
-    background-color: #fffa8d; 
-    color: var(--text-color);
-    padding: 15px;
-    border-radius: 0 5px 5px 5px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    transform: rotate(2deg); 
-    z-index: 100;
-    transition: opacity 0.5s ease-out, transform 0.5s ease-in;
-}
+        // Event Listener für die Bewegung des Sliders
+        slider.addEventListener('input', () => {
+             // 1. Schwierigkeit im globalen Scope aktualisieren
+             window.currentDifficulty = window.difficultyConfigs[slider.value];
+             
+             // 2. Anzeige und Post-it aktualisieren
+             updateDifficultyDisplay(true); 
+        });
+        
+        // WICHTIG: Erlaubt dem Fuchskopf, die finale Position zu erreichen, wenn der Benutzer loslässt.
+        slider.addEventListener('change', () => {
+             // Stellt sicher, dass die finale Position korrekt gerendert wird
+             updateDifficultyDisplay(true); 
+        });
+    }
+});
 
-.post-it-content {
-    font-size: 0.9em;
-    line-height: 1.4;
-    padding-right: 15px; /* Platz für den Schließ-Button */
-}
-
-.post-it-corner {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #fffa8d 50%, #e0d97e 50%); 
-    border-radius: 0 5px 0 0;
-}
-
-/* NEU: Post-it Schließen Button */
-.post-it-close-button {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: none;
-    border: none;
-    color: var(--card-main-color);
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1em;
-    padding: 2px 5px;
-    line-height: 1;
-    z-index: 110;
-}
-.post-it-close-button:hover {
-    color: var(--error-color);
-}
+// Mache die Funktion global verfügbar für loadOrStartGame in script.js
+window.updateDifficultyDisplay = updateDifficultyDisplay;
