@@ -3,17 +3,20 @@
     position: relative;
     padding: 30px 5px 15px; 
 }
+
+/* Anpassungen für den Fuchskopf als "Thumb" */
 #fox-head-slider {
     position: absolute;
-    top: 20px; 
-    transform: translateY(-50%) translateX(-50%); /* Zentrieren des Fuchskopfes */
+    top: 25px; /* Korrigierter Top-Wert, um mittig auf 10px Höhe des Sliders zu liegen (10px/2 + padding-top/2) */
+    transform: translateY(-50%) translateX(-50%); 
     font-size: 1.8rem;
+    /* pointer-events auf none lassen, da der eigentliche Slider gezogen wird, der Fuchs nur folgt. */
     pointer-events: none; 
     color: var(--secondary-color);
     text-shadow: 0 0 5px var(--primary-color);
     z-index: 10;
-    opacity: 0.8; 
-    transition: left 0.2s ease-out, opacity 0.5s;
+    opacity: 1.0; /* Volle Sichtbarkeit */
+    transition: left 0.2s ease-out; /* Übergang für die Position */
     background-color: var(--secondary-color);
     border-radius: 50%;
     padding: 5px;
@@ -30,17 +33,39 @@
     background: var(--button-bg-inactive);
     border-radius: 5px;
     outline: none;
-    /* --slider-fill kommt aus style.css und wird per JS gesetzt */
+    /* --slider-fill wird per JS gesetzt und beinhaltet den Farbverlauf */
     background-image: var(--slider-fill); 
     transition: background-image 0.2s; 
+    cursor: grab; /* Slider ist jetzt ziehbar */
 }
+
+/* WICHTIG: Die Slider-Thumb muss 100% transparent sein, damit der Fuchskopf funktioniert */
 #difficulty-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 0; 
-    height: 0;
-    cursor: pointer;
+    width: 20px; /* Breite für besseres Ziehen */
+    height: 20px;
+    background: transparent; /* Macht den Thumb unsichtbar */
+    border-radius: 50%;
+    cursor: grab;
 }
+#difficulty-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: grab;
+}
+/* Für IE und andere Browser (falls nötig) */
+#difficulty-slider::-ms-thumb {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border-radius: 50%;
+    cursor: grab;
+}
+
 .slider-labels {
     display: flex;
     justify-content: space-between;
@@ -73,40 +98,44 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     transform: rotate(2deg); 
     z-index: 100;
-    transition: opacity 0.5s ease-out, transform 0.5s ease-in;
+    
+    /* Animation für das Abreißen */
+    transform-origin: top right;
+    transition: transform 0.3s ease-in, opacity 0.4s ease-out;
+}
+/* Handschriftliche Schrift */
+.post-it-note * {
+    font-family: 'Kalam', cursive, sans-serif; /* Füge 'Kalam' hinzu (muss in style.css geladen werden) */
 }
 
-.post-it-content {
-    font-size: 0.9em;
-    line-height: 1.4;
-    padding-right: 15px; /* Platz für den Schließ-Button */
-}
-
+/* Knickfalte für Abreiß-Animation */
 .post-it-corner {
     position: absolute;
     top: 0;
     right: 0;
-    width: 20px;
-    height: 20px;
+    width: 30px; /* Größer für besseres Klicken */
+    height: 30px;
     background: linear-gradient(135deg, #fffa8d 50%, #e0d97e 50%); 
     border-radius: 0 5px 0 0;
-}
-
-/* NEU: Post-it Schließen Button */
-.post-it-close-button {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: none;
-    border: none;
-    color: var(--card-main-color);
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1em;
-    padding: 2px 5px;
-    line-height: 1;
+    cursor: pointer; /* Signalisiert Klickbarkeit */
     z-index: 110;
 }
-.post-it-close-button:hover {
-    color: var(--error-color);
+.post-it-corner:hover {
+    background: linear-gradient(135deg, #fffa8d 50%, #ccc466 50%); 
+}
+
+/* Entfernung des generischen Schließen-Buttons, da die Ecke die Funktion übernimmt */
+.post-it-close-button {
+    display: none; 
+}
+
+/* CSS-Klasse, die die Abreiß-Animation auslöst */
+.post-it-note.ripped {
+    transform: rotate(15deg) translateX(100%) translateY(-50%) scale(0.1);
+    opacity: 0;
+}
+
+/* Post-it Content anpassen (Kein Padding für das Schließkreuz mehr nötig) */
+.post-it-content {
+    padding-right: 0; 
 }
