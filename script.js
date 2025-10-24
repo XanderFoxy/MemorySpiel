@@ -21,9 +21,6 @@ const foxHeadSlider = document.getElementById('fox-head-slider');
 const difficultyNote = document.getElementById('difficulty-note');
 const difficultyDescriptionPostit = document.getElementById('difficulty-description-postit');
 
-// NEU: Post-it Schließen Button
-const closePostItButton = document.getElementById('close-post-it');
-
 // Favoriten (Sidebar)
 const permanentGallerySidebar = document.getElementById('permanent-gallery-sidebar');
 
@@ -58,7 +55,7 @@ let pairsFound = 0;
 let matchedImages = []; 
 let currentTheme = 'Gemixt'; 
 let gameStarted = false; 
-// NEU: Status für Post-it, damit es nach dem Schließen auch beim Neuladen/Themenwechsel geschlossen bleibt.
+// Globale Variable für Post-it Status (wird von Postit.js initialisiert und verwaltet)
 let isPostItClosed = false; 
 
 // Konfigurationen für 8 Paare und 3 Schwierigkeitsgrade
@@ -77,14 +74,15 @@ const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId';
 const POST_IT_CLOSED_KEY = 'memoryPostItClosed'; 
 
 
-// --- DATENSTRUKTUREN (Ordnerverzeichnisse sind Immer groß geschrieben) ---
-// ANPASSUNG: Ordnernamen werden Groß geschrieben, da Github Case sensitiv ist Und damit die Ansicht immer stimmt.
+// --- DATENSTRUKTUREN (Ordnerverzeichnisse sind jetzt korrigiert: Großschreibung!) ---
 const IN_ITALIEN_FILES = [
     'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
     'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
     'InItalien/IMG_9369.jpeg', 'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
     'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
-    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg'
+    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg', 
+    'InItalien/extra1.jpeg', 'InItalien/extra2.jpeg', 'InItalien/extra3.jpeg', 
+    'InItalien/extra4.jpeg', 'InItalien/extra5.jpeg' 
 ];
 
 const BABYFOX_FILES = [
@@ -92,15 +90,19 @@ const BABYFOX_FILES = [
     'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
     'BabyFox/IMG_0688.jpeg', 
     'BabyFox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
-    'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg'
+    'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
+    'BabyFox/1.jpg', 'BabyFox/2.jpg', 'BabyFox/3.jpg', 'BabyFox/4.jpg', 'BabyFox/5.jpg', 
+    'BabyFox/6.jpg', 'BabyFox/7.jpg', 'BabyFox/8.jpg', 'BabyFox/9.jpg', 'BabyFox/10.jpg',
+    'BabyFox/11.jpg', 'BabyFox/12.jpg', 'BabyFox/13.jpg', 'BabyFox/14.jpg', 'BabyFox/15.jpg',
+    'BabyFox/16.jpg', 'BabyFox/17.jpg', 'BabyFox/18.jpg', 'BabyFox/19.jpg', 'BabyFox/20.jpg'
 ];
 
 const THROUGH_THE_YEARS_FILES = [
-    'through the years/1.jpg', 'through the years/2.jpg', 'through the years/3.jpg', 'through the years/4.jpg', 
-    'through the years/5.jpg', 'through the years/6.jpg', 'through the years/7.jpg', 'through the years/8.jpg', 
-    'through the years/9.jpg', 'through the years/10.jpg', 'through the years/11.jpg', 'through the years/12.jpg', 
-    'through the years/13.jpg', 'through the years/14.jpg', 'through the years/15.jpg', 'through the years/16.jpg', 
-    'through the years/17.jpg', 'through the years/18.jpg', 'through the years/19.jpg', 'through the years/20.jpg'
+    'Through The Years/1.jpg', 'Through The Years/2.jpg', 'Through The Years/3.jpg', 'Through The Years/4.jpg', 
+    'Through The Years/5.jpg', 'Through The Years/6.jpg', 'Through The Years/7.jpg', 'Through The Years/8.jpg', 
+    'Through The Years/9.jpg', 'Through The Years/10.jpg', 'Through The Years/11.jpg', 'Through The Years/12.jpg', 
+    'Through The Years/13.jpg', 'Through The Years/14.jpg', 'Through The Years/15.jpg', 'Through The Years/16.jpg', 
+    'Through The Years/17.jpg', 'Through The Years/18.jpg', 'Through The Years/19.jpg', 'Through The Years/20.jpg'
 ];
 
 const gameConfigs = {
@@ -113,13 +115,11 @@ const gameConfigs = {
 let currentThemeConfig = gameConfigs['Gemixt'];
 
 // --- FAVORITEN & GALERIE LOGIK ---
-// ... (getFavorites, saveFavorites, toggleFavorite unverändert) ...
 
 /**
  * Erstellt ein Galerie-Item mit korrekter Skalierung.
  */
 function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
-    // ... (Logik unverändert, da die Fehler im CSS waren) ...
     const fullSrc = `${BASE_URL}${imagePath}`;
     const item = document.createElement('div');
     item.classList.add('gallery-item');
@@ -198,7 +198,6 @@ function toggleFavorite(imagePath, iconElement) {
 
 /**
  * Lädt die Favoriten in die Sidebar und die gefundenen Bilder in den Kartenaufsteller.
- * KORRIGIERT: Der Kartenaufsteller (dailyMatchesGallery) wird nur angezeigt, wenn Bilder gefunden wurden.
  */
 function loadPermanentGallery() {
     permanentGallerySidebar.innerHTML = '';
@@ -228,13 +227,12 @@ function loadPermanentGallery() {
             dailyMatchesGallery.appendChild(createGalleryItem(path, favorites.includes(path), true));
         });
     } else {
-        // KORRIGIERT: Ausgeblendet, wenn keine Paare gefunden wurden.
+        // Ausgeblendet, wenn keine Paare gefunden wurden.
         dailyMatchesTitle.classList.add('hidden-by-default'); 
     }
 }
 
 // --- SPIELLOGIK & UX FUNKTIONEN ---
-// ... (generateGameId, saveCurrentGame, loadCurrentGame unverändert) ...
 
 function generateGameId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
@@ -268,7 +266,8 @@ function saveCurrentGame() {
 }
 
 function loadCurrentGame() {
-    isPostItClosed = localStorage.getItem(POST_IT_CLOSED_KEY) === 'true'; // Lade Post-it Status
+    // isPostItClosed wird von Postit.js im window-Scope verwaltet.
+    const currentPostItStatus = window.isPostItClosed || false; 
     
     const gameState = JSON.parse(localStorage.getItem(CURRENT_GAME_STORAGE_KEY));
     if (!gameState || gameState.theme !== currentTheme) return false;
@@ -276,7 +275,10 @@ function loadCurrentGame() {
     currentDifficulty = difficultyConfigs[gameState.difficulty];
     difficultySlider.value = gameState.difficulty;
     
-    updateDifficultyDisplay(false); 
+    // Rufe die ausgelagerte Funktion auf
+    if (typeof updateDifficultyDisplay === 'function') {
+        updateDifficultyDisplay(false); 
+    }
 
     moves = gameState.moves;
     pairsFound = gameState.pairsFound;
@@ -291,8 +293,8 @@ function loadCurrentGame() {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
-    // Post-it Logik beim Laden (Korrigiert/Erweitert)
-    if (gameStarted || isPostItClosed) {
+    // Post-it Logik beim Laden (nutzt globalen Status)
+    if (gameStarted || currentPostItStatus) {
         difficultyNote.classList.add('hidden-by-default');
     } else {
         difficultyNote.classList.remove('hidden-by-default');
@@ -326,7 +328,6 @@ function loadCurrentGame() {
 
 /**
  * Erzeugt das DOM-Element für eine Karte.
- * KORRIGIERT: Keine Änderungen, da die Fehler im CSS waren, welches die Kartenvorderseite skalierte.
  */
 function createCardElement(fullPath, isMatch = false) {
     const card = document.createElement('div');
@@ -358,8 +359,9 @@ function setupGame(isNewGame = true) {
         localStorage.removeItem(CURRENT_GAME_STORAGE_KEY); 
         localStorage.removeItem('initialShuffleComplete'); 
         localStorage.removeItem(CURRENT_GAME_ID_KEY);
-        // NEU: Post-it-Status beim Neustart zurücksetzen, es sei denn es wurde vom Nutzer geschlossen
-        if (!isPostItClosed) {
+        
+        // Post-it-Status beim Neustart zurücksetzen, es sei denn es wurde vom Nutzer geschlossen
+        if (!window.isPostItClosed) {
              localStorage.removeItem(POST_IT_CLOSED_KEY);
         }
     }
@@ -378,8 +380,8 @@ function setupGame(isNewGame = true) {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
-    // Post-it anzeigen (Korrigiert)
-    if (!isPostItClosed) {
+    // Post-it anzeigen (nutzt globalen Status)
+    if (!window.isPostItClosed) {
         difficultyNote.classList.remove('hidden-by-default');
     } else {
          difficultyNote.classList.add('hidden-by-default');
@@ -421,8 +423,6 @@ function setupGame(isNewGame = true) {
     loadPermanentGallery(); 
     localStorage.setItem(CURRENT_GAME_ID_KEY, generateGameId());
 }
-
-// ... (shuffleCardsArray, reShuffleRemainingCards, flipCard, disableCards, unflipCards, resetBoard, showMatchSuccessAndAnimate, gameOver unverändert) ...
 
 function shuffleCardsArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -486,8 +486,13 @@ function flipCard() {
 
     if (!gameStarted) {
         gameStarted = true;
-        // Post-it verschwindet beim ersten Zug (Korrigiert)
+        // Post-it verschwindet beim ersten Zug
         difficultyNote.classList.add('hidden-by-default');
+        // Setze isPostItClosed auf true und speichere es (Funktion kommt aus Postit.js)
+        window.isPostItClosed = true; 
+        if (typeof setPostItClosedStatus === 'function') {
+            setPostItClosedStatus(true);
+        }
     }
     
     this.classList.add('flip');
@@ -583,7 +588,6 @@ function resetBoard() {
 }
 
 function showMatchSuccessAndAnimate(imageSrc, imagePath) {
-    // ... (Logik unverändert, da die Animation gut funktioniert) ...
     matchedImagePreview.src = imageSrc;
     
     const mainContentRect = mainContent.getBoundingClientRect();
@@ -673,10 +677,6 @@ function showImageDetail(fullSrc) {
 }
 
 // History-Logik
-/**
- * Speichert ein Spiel im Verlauf, fügt einen neuen Eintrag hinzu oder aktualisiert einen bestehenden, wenn das Spiel abgeschlossen wurde.
- * KORRIGIERT: Die Logik für die Aktualisierung in der History wurde vereinfacht, um nur abgeschlossene Spiele zu speichern oder ein bestehendes unvollständiges Spiel zu überschreiben, wenn es abgeschlossen ist.
- */
 function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
     let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     const today = new Date().toISOString().split('T')[0];
@@ -712,7 +712,6 @@ function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
 }
 
 function showHistory() {
-    // ... (Logik unverändert) ...
     const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     historyList.innerHTML = '';
 
@@ -748,7 +747,7 @@ function showHistory() {
             <span class="history-score">Züge: ${gameEntry.moves}</span>
         `;
         
-        // KORRIGIERT: Detailansicht öffnet, wenn History-Item geklickt wird
+        // Detailansicht öffnet, wenn History-Item geklickt wird
         item.addEventListener('click', () => {
              viewHistoryGameDetails(gameEntry);
         });
@@ -779,143 +778,12 @@ function viewHistoryGameDetails(gameEntry) {
     historyGameDetailOverlay.classList.add('active');
 }
 
-// --- SLIDER FUCHS LOGIK & DESIGN ---
-/**
- * KORRIGIERT: Dynamische Farbfüllung des Sliders (Gelb -> Orange -> Rot)
- */
-function updateDifficultyDisplay(animate = true) {
-    const min = parseFloat(difficultySlider.min);
-    const max = parseFloat(difficultySlider.max);
-    const val = parseFloat(difficultySlider.value);
-    
-    const correctedPercentage = (val - min) / (max - min) * 100;
-    
-    // Aktualisiere die Position des Fuchs-Emojis
-    // Korrigierte Berechnung des Offsets für eine bessere Zentrierung
-    const sliderWidth = difficultySlider.offsetWidth;
-    const offsetCorrection = 15; // Halbe Breite des Fuchs-Paddings/Rands + etwas Spielraum
-    const leftPosition = (correctedPercentage / 100) * sliderWidth - offsetCorrection;
-    
-    // Verwende absoluten Pixelwert und beschränke ihn auf den sichtbaren Bereich
-    foxHeadSlider.style.left = `min(calc(100% - 25px), max(0px, ${leftPosition}px))`; 
-    
-    currentDifficulty = difficultyConfigs[val];
-    
-    // Aktualisiere den Post-it Text
-    difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
-    
-    // Dynamische Farbberechnung (Gelb (1) -> Orange (2) -> Rot (3))
-    let colorStart, colorMiddle, colorEnd;
-    
-    colorStart = 'var(--match-color)'; // Gelb
-    colorMiddle = 'var(--wait-color)'; // Orange
-    colorEnd = 'var(--error-color)'; // Rot
-
-    let sliderTrackFill;
-
-    if (val == 1) {
-        // Leicht (Gelb)
-        sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorStart} 100%)`;
-    } else if (val == 2) {
-        // Mittel (Orange) - Einfärbung bis zur Mitte, dann Orange
-        sliderTrackFill = `linear-gradient(to right, ${colorMiddle} 0%, ${colorMiddle} 100%)`;
-    } else if (val == 3) {
-        // Schwer (Rot)
-        sliderTrackFill = `linear-gradient(to right, ${colorEnd} 0%, ${colorEnd} 100%)`;
-    } else {
-         // Dynamischer Verlauf für Werte zwischen 1 und 3
-        const range = max - min;
-        const p1 = (1 - min) / range * 100; // Position von Leicht
-        const p2 = (2 - min) / range * 100; // Position von Mittel
-        const p3 = (3 - min) / range * 100; // Position von Schwer
-
-        if (val < 2) {
-            // Zwischen Leicht (1) und Mittel (2): Gelb zu Orange
-            const blend = (val - 1) / 1;
-            const stop = (val - 1) / range * 100;
-            sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorStart} ${correctedPercentage}%, ${colorMiddle} ${correctedPercentage}%, ${colorMiddle} 100%)`;
-
-        } else if (val > 2) {
-            // Zwischen Mittel (2) und Schwer (3): Orange zu Rot
-            const blend = (val - 2) / 1;
-            const startOrange = (2 - min) / range * 100;
-            sliderTrackFill = `linear-gradient(to right, ${colorMiddle} 0%, ${colorMiddle} ${startOrange}%, ${colorEnd} ${correctedPercentage}%, ${colorEnd} 100%)`;
-        }
-    }
-    
-    // WICHTIG: Erstellen des dynamischen Verlaufs von Links bis zur aktuellen Reglerposition
-    let gradientStops = [];
-    const p_leicht = 0;
-    const p_mittel = 50;
-    const p_schwer = 100;
-
-    if (val <= 1) { // Leicht
-        gradientStops.push(`${colorStart} 0%`, `${colorStart} ${correctedPercentage}%`);
-    } else if (val > 1 && val <= 2) { // Leicht -> Mittel
-        const orangeStart = 50 - (50 * (2 - val));
-        gradientStops.push(`${colorStart} 0%`, `${colorMiddle} ${p_mittel}%`);
-        gradientStops.push(`${colorMiddle} ${correctedPercentage}%`);
-    } else if (val > 2) { // Mittel -> Schwer
-        const redStart = 50 + (50 * (val - 2));
-        gradientStops.push(`${colorStart} 0%`, `${colorMiddle} ${p_mittel}%`);
-        gradientStops.push(`${colorMiddle} ${p_mittel}%`);
-        gradientStops.push(`${colorEnd} ${correctedPercentage}%`);
-    }
-    
-    // Einfache Lösung: Verwende 0% für Startfarbe, und den korrigierten Prozentsatz für die Endfarbe.
-    // Dazwischen fügen wir die statische inaktive Farbe ein, wenn die aktuelle Position nicht 100% ist.
-    let fill = '';
-    if (val == 1) {
-        fill = `linear-gradient(to right, var(--match-color) 0%, var(--match-color) 30%, var(--button-bg-inactive) 30%, var(--button-bg-inactive) 100%)`;
-    } else if (val == 2) {
-        fill = `linear-gradient(to right, var(--wait-color) 0%, var(--wait-color) 65%, var(--button-bg-inactive) 65%, var(--button-bg-inactive) 100%)`;
-    } else if (val == 3) {
-        fill = `linear-gradient(to right, var(--error-color) 0%, var(--error-color) 100%)`;
-    } else {
-        // Dynamischer Verlauf für Zwischenstufen (Zwischen 1 und 3)
-        let colorA, colorB, percentageA, percentageB;
-        if (val < 2) {
-             // 1 (Gelb) zu 2 (Orange)
-            colorA = 'var(--match-color)';
-            colorB = 'var(--wait-color)';
-            percentageA = 0;
-            percentageB = 50;
-        } else {
-            // 2 (Orange) zu 3 (Rot)
-            colorA = 'var(--wait-color)';
-            colorB = 'var(--error-color)';
-            percentageA = 50;
-            percentageB = 100;
-        }
-        
-        // Berechnung des Interpolationsfaktors
-        const factor = (val - Math.floor(val)); 
-        const interColor = `rgb(
-            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[0]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[0]) * factor)},
-            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[1]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[1]) * factor)},
-            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[2]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[2]) * factor)}
-        )`;
-        
-        fill = `linear-gradient(to right, ${colorA} 0%, ${colorB} ${correctedPercentage}%, var(--button-bg-inactive) ${correctedPercentage}%, var(--button-bg-inactive) 100%)`;
-    }
-    
-    difficultySlider.style.setProperty('--slider-fill', fill);
-
-
-    if (animate) {
-         foxHeadSlider.style.opacity = 1;
-         setTimeout(() => { foxHeadSlider.style.opacity = 0.8; }, 200); 
-    } else {
-         foxHeadSlider.style.opacity = 0.8; 
-    }
-}
 
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Lade den Post-it-Status
-    isPostItClosed = localStorage.getItem(POST_IT_CLOSED_KEY) === 'true';
-
+    // Die Variable window.isPostItClosed wird von Assets/JavaScript/Postit.js geladen.
+    
     // Event Listener für Overlays
     [imageDetailOverlay, historyOverlay, historyGameDetailOverlay].forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -936,33 +804,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     showHistoryBtn.addEventListener('click', showHistory);
     
-    // NEU: Post-it schließen Funktion
-    closePostItButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        difficultyNote.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-in';
-        difficultyNote.style.opacity = '0';
-        difficultyNote.style.transform = 'rotate(10deg) translateX(100px) translateY(-50px)';
-        
-        // Nach der Animation ausblenden und Status speichern
-        setTimeout(() => {
-            difficultyNote.classList.add('hidden-by-default');
-            difficultyNote.style.transition = 'none'; 
-            difficultyNote.style.transform = 'rotate(2deg)'; // Reset für das nächste Spiel
-            isPostItClosed = true;
-            localStorage.setItem(POST_IT_CLOSED_KEY, 'true');
-        }, 500); 
-    });
-    
-    difficultySlider.addEventListener('input', (e) => {
-        updateDifficultyDisplay(true);
-    });
+    // Event-Listener für Slider sind jetzt in Assets/JavaScript/Slider.js
     
     // Korrektur: Update Difficulty Display beim Initialisieren, bevor es zum Game Setup geht
-    updateDifficultyDisplay(false); 
-    
-    difficultySlider.addEventListener('change', () => {
-         setupGame(true); 
-    });
+    if (typeof updateDifficultyDisplay === 'function') {
+        updateDifficultyDisplay(false); 
+    }
     
     themeButtons.forEach(button => {
         button.addEventListener('click', (e) => {
@@ -986,13 +833,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (!loadCurrentGame()) {
-        // updateDifficultyDisplay(false) wurde bereits ausgeführt
+        if (typeof updateDifficultyDisplay === 'function') {
+            updateDifficultyDisplay(false); 
+        }
         setupGame(true); 
     }
     
     // Lade die heutige Spielanzahl beim Start
     const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     const today = new Date().toISOString().split('T')[0];
-    const todayCount = history.filter(entry => entry.date === today && entry.completed).length; // Zähle nur abgeschlossene Spiele
+    const todayCount = history.filter(entry => entry.date === today && entry.completed).length; 
     document.getElementById('daily-score').textContent = `Heute: ${todayCount} abgeschl. Spiele`;
 });
