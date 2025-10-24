@@ -4,113 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Spiel</title>
-    <link rel="stylesheet" href="Style.css">
-    <link rel="stylesheet" href="Assets/Style/PostitUndSlider.css">
+    
+    <link rel="stylesheet" href="style.css"> 
+    
+    <link rel="stylesheet" href="Assets/Style/postitundslider.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="main-container">
-        <div class="game-container"> 
-            
-            <div class="sidebar">
-                <h2>Themen</h2>
-                <div class="theme-nav">
-                    <button class="theme-button active-theme" data-theme="Gemixt">Gemixt</button>
-                    <button class="theme-button" data-theme="InItalien">In Italien</button>
-                    <button class="theme-button" data-theme="BabyFox">BabyFox</button>
-                    <button class="theme-button" data-theme="ThroughTheYears">Through The Years</button>
-                </div>
-                
-                <h3>Schwierigkeit</h3>
-                <div class="difficulty-slider-container">
-                    <span id="fox-head-slider" class="fas fa-paw"></span>
-                    <input type="range" min="1" max="3" value="1" id="difficulty-slider">
-                    <div class="slider-labels">
-                        <span id="label-easy">Leicht</span>
-                        <span>Mittel</span>
-                        <span id="label-hard">Schwer</span>
-                    </div>
-                </div>
-                <button id="show-history-btn" class="theme-button" style="margin-top: 20px;">Verlauf anzeigen</button>
 
-                <h3>Favoriten</h3>
+    <a href="https://xanderfoxy.github.io/AsmaasWunderland" class="back-link theme-button">
+        <i class="fas fa-arrow-left"></i> Zurück zu Asmaas Wunderland
+    </a>
+
+    <div class="game-container">
+        
+        <aside class="sidebar">
+            <h2>Schwierigkeit</h2>
+            
+            <div class="difficulty-slider-container">
+                <div id="fox-head-slider">🦊</div>
+                <input type="range" min="1" max="3" value="1" id="difficulty-slider" class="slider">
+                <div class="slider-labels">
+                    <span id="label-easy" style="color: var(--match-color);">Leicht</span>
+                    <span id="label-medium" style="color: var(--wait-color);">Mittel</span>
+                    <span id="label-hard" style="color: var(--error-color);">Schwer</span>
+                </div>
+            </div>
+            
+            <hr>
+
+            <h2>Themenwahl</h2>
+            <nav class="theme-nav">
+                <button class="theme-button" data-theme="InItalien">In Italien</button>
+                <button class="theme-button" data-theme="BabyFox">Baby Fox</button>
+                <button class="theme-button" data-theme="ThroughTheYears">Through The Years</button>
+                <button class="theme-button active-theme" data-theme="Gemixt">Gemixt</button>
+            </nav>
+
+            <hr>
+            
+            <div class="sidebar-favorites-container">
+                <h2>Deine Favoriten ❤️</h2>
                 <div id="permanent-gallery-sidebar" class="permanent-gallery">
-                    </div>
+                    <p class="gallery-info" style="color: var(--secondary-color); font-size: 0.9em; padding: 5px 0;">Herz für Favorit</p>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <h2>Dein Score</h2>
+            <div class="score-container">
+                <span id="daily-score">Heute: 0 Spiele</span>
+                <button id="show-history-btn" class="theme-button" style="margin-top: 10px;">
+                    <i class="fas fa-calendar-alt"></i> Verlauf
+                </button>
+            </div>
+            
+        </aside>
+
+        <main class="main-content">
+            <h1 class="game-title">Memory</h1>
+            
+            <div id="difficulty-note" class="post-it-note hidden-by-default">
+                <div id="difficulty-description-postit" class="post-it-content"></div>
+                <button id="close-post-it" class="post-it-close-button">X</button>
+                <div class="post-it-corner"></div>
+            </div>
+            
+            <div class="stats-box">
+                <span id="moves">Züge: 0</span>
+                <span id="pairs-found">Gefunden: 0</span>
             </div>
 
-            <div class="main-content">
-                <h1 class="game-title">🦊 Memory Spiel 🦊</h1>
-                <div class="stats-box">
-                    <span id="moves">Züge: 0</span>
-                    <span id="pairs-found">Gefunden: 0</span>
+            <section class="memory-grid"></section>
+            
+            <div id="match-success-overlay" class="match-success-overlay overlay-modal">
+                <div class="overlay-content">
+                    <img id="matched-image-preview" src="" alt="Gefundenes Bild">
                 </div>
+            </div>
+            
+            <img id="animated-match-thumbnail" src="" alt="Thumbnail Animation" class="hidden-by-default">
 
-                <div id="difficulty-note" class="post-it-note">
-                    <div class="post-it-corner"></div>
-                    <button id="close-post-it" class="post-it-close-button">X</button>
-                    <div id="difficulty-description-postit" class="post-it-content">
-                        </div>
+            <div id="daily-matches-container" class="daily-matches-container">
+                 <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel (Kartenaufsteller)</h2>
+                <div id="daily-matches-gallery" class="daily-matches-gallery">
                 </div>
-
-                <div class="memory-grid">
+            </div>
+            
+            <div id="history-overlay" class="overlay">
+                <div id="history-content" class="overlay-content detail-content">
+                    <h2>Dein Spielverlauf</h2>
+                    <p style="font-size: 0.9em; color: var(--secondary-color);">Klick auf ein Spiel, um die erspielten Paare zu sehen.</p>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+            
+            <div id="gallery-overlay" class="overlay">
+                <div class="overlay-content">
+                    <h2 class="hidden-by-default">Glückwunsch! Alle Paare gefunden.</h2>
+                    <div id="gallery-images" class="daily-matches-gallery">
                     </div>
-                
-                <div class="daily-matches-container">
-                    <h3 id="daily-matches-title" class="hidden-by-default" style="color:var(--secondary-color); text-shadow:none;">Heute gefundene Paare:</h3>
-                    <div id="daily-matches-gallery" class="daily-matches-gallery">
+                    <button id="close-gallery" class="theme-button">Neues Spiel</button>
+                </div>
+            </div>
+
+            <div id="image-detail-overlay" class="overlay">
+                <div id="detail-content" class="overlay-content detail-content" style="max-width: 90vw; max-height: 90vh;">
+                    <img id="detail-image" src="" alt="Große Ansicht des Bildes" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+            </div>
+            
+            <div id="history-game-detail-overlay" class="overlay">
+                <div id="history-game-detail-content" class="overlay-content detail-content">
+                     <h3 style="margin-bottom: 15px;">Erspielte Paare: <span id="history-detail-date"></span></h3>
+                    <div id="history-game-gallery" class="daily-matches-gallery">
                         </div>
+                     <button class="theme-button close-history-detail" style="margin-top: 20px;">Schließen</button>
                 </div>
+            </div>
 
-                <img id="animated-match-thumbnail" class="hidden-by-default" alt="Match Animation Thumbnail">
-                
-                <div id="match-success-overlay" class="match-success-overlay">
-                    <div class="overlay-content">
-                        <img id="matched-image-preview" alt="Gefundenes Bild">
-                    </div>
-                </div>
 
-            </div> 
-        </div></div> <audio id="sound-match" src="Sounds/match.mp3" preload="auto"></audio>
-    <audio id="sound-error" src="Sounds/error.mp3" preload="auto"></audio>
-    <audio id="sound-win" src="Sounds/win.mp3" preload="auto"></audio>
-    
-    <div id="gallery-overlay" class="overlay">
-        <div class="overlay-content">
-            <h2 class="game-title">🎉 Glückwunsch! 🎉</h2>
-            <p style="color:white; margin-bottom: 20px;">Alle Bilder gefunden!</p>
-            <div id="gallery-images" class="gallery-images-container">
-                </div>
-            <button id="close-gallery" class="theme-button" style="margin-top: 20px;">Neues Spiel starten</button>
-        </div>
+            <audio id="sound-match" src="Sounds/Match.mp3" preload="auto"></audio>
+            <audio id="sound-error" src="Sounds/Error.mp3" preload="auto"></audio>
+            <audio id="sound-win" src="Sounds/Win.mp3" preload="auto"></audio>
+        </main>
     </div>
     
-    <div id="image-detail-overlay" class="overlay">
-        <div class="overlay-content" style="max-width: 90vw; max-height: 90vh; padding: 0;">
-             <img id="detail-image" style="max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 8px;" alt="Detailansicht">
-        </div>
-    </div>
+    <script src="Assets/JavaScript/postit.js"></script>
+    <script src="Assets/JavaScript/slider.js"></script>
 
-    <div id="history-overlay" class="overlay">
-        <div id="history-content" class="overlay-content">
-             <h2>Spielverlauf</h2>
-             </div>
-    </div>
+    <script src="Assets/JavaScript/storage.js"></script>
+    <script src="Assets/JavaScript/ui.js"></script>
     
-    <div id="history-game-detail-overlay" class="overlay">
-        <div id="history-game-detail-content" class="overlay-content">
-             <button class="post-it-close-button close-history-detail" style="color: white; font-size: 1.5em; top: 10px; right: 10px;">X</button>
-             <h2 id="history-detail-title">Spieldetails</h2>
-             <div id="history-detail-images" class="gallery-images-container" style="max-height: 300px;">
-                 </div>
-        </div>
-    </div>
-
-    <script src="Assets/JavaScript/Postit.js"></script>
-    <script src="Assets/JavaScript/Slider.js"></script>
-
-    <script src="Assets/JavaScript/Storage.js"></script>
-    <script src="Assets/JavaScript/UI.js"></script>
-    
-    <script src="Script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
