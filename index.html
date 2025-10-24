@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory</title>
+    <title>memory</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="Assets/Style/PostitUndSlider.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -22,9 +23,9 @@
                 <div id="fox-head-slider">🦊</div>
                 <input type="range" min="1" max="3" value="1" id="difficulty-slider" class="slider">
                 <div class="slider-labels">
-                    <span>Leicht</span>
-                    <span>Mittel</span>
-                    <span>Schwer</span>
+                    <span id="label-easy" style="color: var(--match-color);">Leicht</span>
+                    <span id="label-medium" style="color: var(--wait-color);">Mittel</span>
+                    <span id="label-hard" style="color: var(--error-color);">Schwer</span>
                 </div>
             </div>
             
@@ -34,7 +35,7 @@
             <nav class="theme-nav">
                 <button class="theme-button" data-theme="InItalien">In Italien</button>
                 <button class="theme-button" data-theme="BabyFox">Baby Fox</button>
-                <button class="theme-button" data-theme="ThroughTheYears">ThroughTheYears</button>
+                <button class="theme-button" data-theme="ThroughTheYears">Through The Years</button>
                 <button class="theme-button active-theme" data-theme="Gemixt">Gemixt</button>
             </nav>
 
@@ -63,8 +64,9 @@
             <h1 class="game-title">Memory</h1>
             
             <div id="difficulty-note" class="post-it-note hidden-by-default">
+                <button id="close-post-it" class="post-it-close-button">X</button> 
                 <div id="difficulty-description-postit" class="post-it-content"></div>
-                <div class="post-it-corner" id="close-post-it"></div> 
+                <div class="post-it-corner"></div>
             </div>
             
             <div class="stats-box">
@@ -83,9 +85,9 @@
             <img id="animated-match-thumbnail" src="" alt="Thumbnail Animation" class="hidden-by-default">
 
             <div id="daily-matches-container" class="daily-matches-container">
-                 <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel (Kartenaufsteller)</h2> 
+                 <h2 id="daily-matches-title" class="hidden-by-default">Gefundene Bilder im aktuellen Spiel (Kartenaufsteller)</h2>
                 <div id="daily-matches-gallery" class="daily-matches-gallery">
-                    </div>
+                </div>
             </div>
             
             <div id="history-overlay" class="overlay">
@@ -120,12 +122,15 @@
                 </div>
             </div>
 
+
             <audio id="sound-match" src="Sounds/Match.mp3" preload="auto"></audio>
             <audio id="sound-error" src="Sounds/Error.mp3" preload="auto"></audio>
             <audio id="sound-win" src="Sounds/Win.mp3" preload="auto"></audio>
         </main>
     </div>
 
+    <script src="Assets/JavaScript/Postit.js"></script>
+    <script src="Assets/JavaScript/Slider.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
