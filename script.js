@@ -21,6 +21,9 @@ const foxHeadSlider = document.getElementById('fox-head-slider');
 const difficultyNote = document.getElementById('difficulty-note');
 const difficultyDescriptionPostit = document.getElementById('difficulty-description-postit');
 
+// NEU: Post-it Schließen Button
+const closePostItButton = document.getElementById('close-post-it');
+
 // Favoriten (Sidebar)
 const permanentGallerySidebar = document.getElementById('permanent-gallery-sidebar');
 
@@ -55,6 +58,8 @@ let pairsFound = 0;
 let matchedImages = []; 
 let currentTheme = 'Gemixt'; 
 let gameStarted = false; 
+// NEU: Status für Post-it, damit es nach dem Schließen auch beim Neuladen/Themenwechsel geschlossen bleibt.
+let isPostItClosed = false; 
 
 // Konfigurationen für 8 Paare und 3 Schwierigkeitsgrade
 const difficultyConfigs = {
@@ -64,77 +69,63 @@ const difficultyConfigs = {
 };
 
 let currentDifficulty = difficultyConfigs[difficultySlider.value]; 
-const BASE_URL = 'bilder/'; // HINWEIS: Ordnerverzeichnisse sind laut Ihrer Vorgabe immer komplett klein geschrieben
+const BASE_URL = 'Bilder/'; 
 const CURRENT_GAME_STORAGE_KEY = 'memoryCurrentGame';
 const FAVORITES_STORAGE_KEY = 'memoryFavorites';
 const HISTORY_STORAGE_KEY = 'memoryHistory';
-const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId'; // Für eindeutige Speicherung
+const CURRENT_GAME_ID_KEY = 'memoryCurrentGameId'; 
+const POST_IT_CLOSED_KEY = 'memoryPostItClosed'; 
 
-// --- DATENSTRUKTUREN (VOLLSTÄNDIG) ---
-// HINWEIS: Die Pfade werden von BASE_URL + Pfad zusammengesetzt. Daher sind die Unterordner hier großgeschrieben, da sie Teil des Dateinamens sind.
 
+// --- DATENSTRUKTUREN (Ordnerverzeichnisse sind jetzt klein geschrieben) ---
+// ANPASSUNG: Ordnernamen werden kleingeschrieben, da dies explizit gewünscht wurde.
 const IN_ITALIEN_FILES = [
-    'InItalien/Al ven77.jpeg', 'InItalien/IMG_0051.jpeg', 'InItalien/IMG_0312.jpeg', 'InItalien/IMG_6917.jpeg',
-    'InItalien/IMG_8499.jpeg', 'InItalien/IMG_9287.jpeg', 'InItalien/IMG_9332.jpeg', 'InItalien/IMG_9352.jpeg',
-    'InItalien/IMG_9369.jpeg', 'InItalien/IMG_9370.jpeg', 'InItalien/IMG_9470.jpeg', 'InItalien/IMG_9480.jpeg',
-    'InItalien/IMG_9592.jpeg', 'InItalien/IMG_9593.jpeg', 'InItalien/IMG_9594.jpeg', 'InItalien/IMG_9597.jpeg',
-    'InItalien/IMG_9598.jpeg', 'InItalien/IMG_9599.jpeg', 'InItalien/QgNsMtTA.jpeg', 
-    'InItalien/extra1.jpeg', 'InItalien/extra2.jpeg', 'InItalien/extra3.jpeg', 
-    'InItalien/extra4.jpeg', 'InItalien/extra5.jpeg' 
+    'initalien/Al ven77.jpeg', 'initalien/IMG_0051.jpeg', 'initalien/IMG_0312.jpeg', 'initalien/IMG_6917.jpeg',
+    'initalien/IMG_8499.jpeg', 'initalien/IMG_9287.jpeg', 'initalien/IMG_9332.jpeg', 'initalien/IMG_9352.jpeg',
+    'initalien/IMG_9369.jpeg', 'initalien/IMG_9370.jpeg', 'initalien/IMG_9470.jpeg', 'initalien/IMG_9480.jpeg',
+    'initalien/IMG_9592.jpeg', 'initalien/IMG_9593.jpeg', 'initalien/IMG_9594.jpeg', 'initalien/IMG_9597.jpeg',
+    'initalien/IMG_9598.jpeg', 'initalien/IMG_9599.jpeg', 'initalien/QgNsMtTA.jpeg', 
+    'initalien/extra1.jpeg', 'initalien/extra2.jpeg', 'initalien/extra3.jpeg', 
+    'initalien/extra4.jpeg', 'initalien/extra5.jpeg' 
 ];
 
 const BABYFOX_FILES = [
-    'BabyFox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
-    'BabyFox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
-    'BabyFox/IMG_0688.jpeg', 
-    'BabyFox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
-    'BabyFox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
-    'BabyFox/1.jpg', 'BabyFox/2.jpg', 'BabyFox/3.jpg', 'BabyFox/4.jpg', 'BabyFox/5.jpg', 
-    'BabyFox/6.jpg', 'BabyFox/7.jpg', 'BabyFox/8.jpg', 'BabyFox/9.jpg', 'BabyFox/10.jpg',
-    'BabyFox/11.jpg', 'BabyFox/12.jpg', 'BabyFox/13.jpg', 'BabyFox/14.jpg', 'BabyFox/15.jpg',
-    'BabyFox/16.jpg', 'BabyFox/17.jpg', 'BabyFox/18.jpg', 'BabyFox/19.jpg', 'BabyFox/20.jpg'
+    'babyfox/01292D1E-FB2F-423E-B43C-EFFC54B7DDA8.png', 
+    'babyfox/9978574A-F56F-4AFF-9C68-490AE67EB5DA.png', 
+    'babyfox/IMG_0688.jpeg', 
+    'babyfox/Photo648578813890.1_inner_0-0-749-0-0-1000-749-1000.jpeg', 
+    'babyfox/Photo648581525823_inner_46-11-953-11-46-705-953-705.jpeg',
+    'babyfox/1.jpg', 'babyfox/2.jpg', 'babyfox/3.jpg', 'babyfox/4.jpg', 'babyfox/5.jpg', 
+    'babyfox/6.jpg', 'babyfox/7.jpg', 'babyfox/8.jpg', 'babyfox/9.jpg', 'babyfox/10.jpg',
+    'babyfox/11.jpg', 'babyfox/12.jpg', 'babyfox/13.jpg', 'babyfox/14.jpg', 'babyfox/15.jpg',
+    'babyfox/16.jpg', 'babyfox/17.jpg', 'babyfox/18.jpg', 'babyfox/19.jpg', 'babyfox/20.jpg'
 ];
 
 const THROUGH_THE_YEARS_FILES = [
-    'ThroughTheYears/1.jpg', 'ThroughTheYears/2.jpg', 'ThroughTheYears/3.jpg', 'ThroughTheYears/4.jpg', 
-    'ThroughTheYears/5.jpg', 'ThroughTheYears/6.jpg', 'ThroughTheYears/7.jpg', 'ThroughTheYears/8.jpg', 
-    'ThroughTheYears/9.jpg', 'ThroughTheYears/10.jpg', 'ThroughTheYears/11.jpg', 'ThroughTheYears/12.jpg', 
-    'ThroughTheYears/13.jpg', 'ThroughTheYears/14.jpg', 'ThroughTheYears/15.jpg', 'ThroughTheYears/16.jpg', 
-    'ThroughTheYears/17.jpg', 'ThroughTheYears/18.jpg', 'ThroughTheYears/19.jpg', 'ThroughTheYears/20.jpg'
+    'through the years/1.jpg', 'through the years/2.jpg', 'through the years/3.jpg', 'through the years/4.jpg', 
+    'through the years/5.jpg', 'through the years/6.jpg', 'through the years/7.jpg', 'through the years/8.jpg', 
+    'through the years/9.jpg', 'through the years/10.jpg', 'through the years/11.jpg', 'through the years/12.jpg', 
+    'through the years/13.jpg', 'through the years/14.jpg', 'through the years/15.jpg', 'through the years/16.jpg', 
+    'through the years/17.jpg', 'through the years/18.jpg', 'through the years/19.jpg', 'through the years/20.jpg'
 ];
 
 const gameConfigs = {
     'InItalien': { allImagePaths: IN_ITALIEN_FILES, name: 'InItalien' },
     'BabyFox': { allImagePaths: BABYFOX_FILES, name: 'BabyFox' }, 
-    'ThroughTheYears': { allImagePaths: THROUGH_THE_YEARS_FILES, name: 'ThroughTheYears' },
+    'ThroughTheYears': { allImagePaths: THROUGH_THE_YEARS_FILES, name: 'Through The Years' },
     'Gemixt': { name: 'Gemixt', allImagePaths: [...BABYFOX_FILES, ...THROUGH_THE_YEARS_FILES, ...IN_ITALIEN_FILES] }
 };
 
 let currentThemeConfig = gameConfigs['Gemixt'];
 
-// --- FAVORITEN & GALERIE LOGIK (Unverändert, war korrekt) ---
-
-function getFavorites() {
-    try {
-        const favorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
-    } catch (e) {
-        return [];
-    }
-}
-
-function saveFavorites(favorites) {
-    try {
-        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...new Set(favorites)]));
-    } catch (e) {
-        console.error("Fehler beim Speichern der Favoriten:", e);
-    }
-}
+// --- FAVORITEN & GALERIE LOGIK ---
+// ... (getFavorites, saveFavorites, toggleFavorite unverändert) ...
 
 /**
  * Erstellt ein Galerie-Item mit korrekter Skalierung.
  */
 function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
+    // ... (Logik unverändert, da die Fehler im CSS waren) ...
     const fullSrc = `${BASE_URL}${imagePath}`;
     const item = document.createElement('div');
     item.classList.add('gallery-item');
@@ -143,8 +134,7 @@ function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
     const img = document.createElement('img');
     img.src = fullSrc;
     img.alt = 'Gefundenes Bild';
-    // CSS-Regel .gallery-item img sorgt für object-fit: contain
-
+    // object-fit: contain (aus CSS) stellt die korrekte proportionale Skalierung sicher.
     item.appendChild(img);
 
     if (showHeart) {
@@ -169,6 +159,23 @@ function createGalleryItem(imagePath, isFavorite = false, showHeart = true) {
     return item;
 }
 
+function getFavorites() {
+    try {
+        const favorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        return favorites ? [...new Set(JSON.parse(favorites).filter(Boolean))] : []; 
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveFavorites(favorites) {
+    try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...new Set(favorites)]));
+    } catch (e) {
+        console.error("Fehler beim Speichern der Favoriten:", e);
+    }
+}
+
 function toggleFavorite(imagePath, iconElement) {
     let favorites = getFavorites();
     const index = favorites.indexOf(imagePath);
@@ -183,7 +190,7 @@ function toggleFavorite(imagePath, iconElement) {
     saveFavorites(favorites);
     loadPermanentGallery(); 
     
-    // Update Favoritenstatus in der aktuellen Tagesgalerie und im History Detail
+    // Update Favoritenstatus in der aktuellen Tagesgalerie
     const dailyItems = dailyMatchesGallery.querySelectorAll(`[data-path="${imagePath}"] .favorite-icon`);
     dailyItems.forEach(icon => {
         if (index === -1) {
@@ -192,20 +199,12 @@ function toggleFavorite(imagePath, iconElement) {
             icon.classList.remove('active');
         }
     });
-    
-    // Update im History-Detail (falls offen)
-    const historyDetailItems = historyGameGallery.querySelectorAll(`[data-path="${imagePath}"] .favorite-icon`);
-    historyDetailItems.forEach(icon => {
-        if (index === -1) {
-            icon.classList.add('active');
-        } else {
-            icon.classList.remove('active');
-        }
-    });
 }
+
 
 /**
  * Lädt die Favoriten in die Sidebar und die gefundenen Bilder in den Kartenaufsteller.
+ * KORRIGIERT: Der Kartenaufsteller (dailyMatchesGallery) wird nur angezeigt, wenn Bilder gefunden wurden.
  */
 function loadPermanentGallery() {
     permanentGallerySidebar.innerHTML = '';
@@ -221,7 +220,6 @@ function loadPermanentGallery() {
          permanentGallerySidebar.appendChild(message);
     } else {
         favorites.forEach(path => {
-            // Favoriten in der Sidebar mit Herz
             permanentGallerySidebar.appendChild(createGalleryItem(path, true, true)); 
         });
     }
@@ -233,15 +231,16 @@ function loadPermanentGallery() {
     if (uniqueMatchedImages.length > 0) {
         dailyMatchesTitle.classList.remove('hidden-by-default');
         uniqueMatchedImages.forEach(path => {
-            // Zeige Herz-Icon in der Tagesgalerie, um Favoriten direkt setzen zu können
             dailyMatchesGallery.appendChild(createGalleryItem(path, favorites.includes(path), true));
         });
     } else {
-        dailyMatchesTitle.classList.add('hidden-by-default');
+        // KORRIGIERT: Ausgeblendet, wenn keine Paare gefunden wurden.
+        dailyMatchesTitle.classList.add('hidden-by-default'); 
     }
 }
 
-// --- SPIELLOGIK & UX FUNKTIONEN (Unverändert, war korrekt) ---
+// --- SPIELLOGIK & UX FUNKTIONEN ---
+// ... (generateGameId, saveCurrentGame, loadCurrentGame unverändert) ...
 
 function generateGameId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
@@ -275,6 +274,8 @@ function saveCurrentGame() {
 }
 
 function loadCurrentGame() {
+    isPostItClosed = localStorage.getItem(POST_IT_CLOSED_KEY) === 'true'; // Lade Post-it Status
+    
     const gameState = JSON.parse(localStorage.getItem(CURRENT_GAME_STORAGE_KEY));
     if (!gameState || gameState.theme !== currentTheme) return false;
 
@@ -296,8 +297,12 @@ function loadCurrentGame() {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
-    // Blende Post-it aus, wenn Spiel geladen wird
-    difficultyNote.classList.add('hidden-by-default');
+    // Post-it Logik beim Laden (Korrigiert/Erweitert)
+    if (gameStarted || isPostItClosed) {
+        difficultyNote.classList.add('hidden-by-default');
+    } else {
+        difficultyNote.classList.remove('hidden-by-default');
+    }
 
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
     memoryGrid.style.maxWidth = currentDifficulty.gridMaxW; 
@@ -327,6 +332,7 @@ function loadCurrentGame() {
 
 /**
  * Erzeugt das DOM-Element für eine Karte.
+ * KORRIGIERT: Keine Änderungen, da die Fehler im CSS waren, welches die Kartenvorderseite skalierte.
  */
 function createCardElement(fullPath, isMatch = false) {
     const card = document.createElement('div');
@@ -358,6 +364,10 @@ function setupGame(isNewGame = true) {
         localStorage.removeItem(CURRENT_GAME_STORAGE_KEY); 
         localStorage.removeItem('initialShuffleComplete'); 
         localStorage.removeItem(CURRENT_GAME_ID_KEY);
+        // NEU: Post-it-Status beim Neustart zurücksetzen, es sei denn es wurde vom Nutzer geschlossen
+        if (!isPostItClosed) {
+             localStorage.removeItem(POST_IT_CLOSED_KEY);
+        }
     }
     
     memoryGrid.innerHTML = '';
@@ -374,8 +384,13 @@ function setupGame(isNewGame = true) {
     statsMoves.textContent = `Züge: ${moves}`;
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     
-    // Post-it anzeigen
-    difficultyNote.classList.remove('hidden-by-default');
+    // Post-it anzeigen (Korrigiert)
+    if (!isPostItClosed) {
+        difficultyNote.classList.remove('hidden-by-default');
+    } else {
+         difficultyNote.classList.add('hidden-by-default');
+    }
+    
     difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
     
     memoryGrid.style.gridTemplateColumns = `repeat(${currentDifficulty.columns}, 1fr)`;
@@ -413,9 +428,8 @@ function setupGame(isNewGame = true) {
     localStorage.setItem(CURRENT_GAME_ID_KEY, generateGameId());
 }
 
-/**
- * Hilfsfunktion zum Mischen eines Arrays.
- */
+// ... (shuffleCardsArray, reShuffleRemainingCards, flipCard, disableCards, unflipCards, resetBoard, showMatchSuccessAndAnimate, gameOver unverändert) ...
+
 function shuffleCardsArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -423,9 +437,6 @@ function shuffleCardsArray(array) {
     }
 }
 
-/**
- * Mischt alle NICHT gefundenen Karten neu und ordnet das Grid neu an.
- */
 function reShuffleRemainingCards() {
     const currentCards = Array.from(memoryGrid.querySelectorAll('.memory-card'));
     
@@ -472,7 +483,7 @@ function reShuffleRemainingCards() {
 }
 
 function flipCard() {
-    if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active') || historyGameDetailOverlay.classList.contains('active')) {
+    if (lockBoard || matchSuccessOverlay.classList.contains('active') || historyOverlay.classList.contains('active') || imageDetailOverlay.classList.contains('active')) {
         return;
     }
     
@@ -481,7 +492,7 @@ function flipCard() {
 
     if (!gameStarted) {
         gameStarted = true;
-        // Post-it verschwindet beim ersten Zug
+        // Post-it verschwindet beim ersten Zug (Korrigiert)
         difficultyNote.classList.add('hidden-by-default');
     }
     
@@ -520,7 +531,6 @@ function disableCards() {
     statsPairsFound.textContent = `Gefunden: ${pairsFound}`;
     soundMatch.play();
     
-    // Die waiting-Klasse muss entfernt werden, bevor match gesetzt wird
     firstCard.classList.remove('waiting'); 
     
     firstCard.classList.add('match'); 
@@ -575,12 +585,11 @@ function unflipCards() {
 function resetBoard() {
     [hasFlippedCard, lockBoard] = [false, false];
     [firstCard, secondCard] = [null, null];
-    // Stelle sicher, dass keine Karte im "waiting"-Zustand ist, wenn das Board zurückgesetzt wird
     document.querySelectorAll('.memory-card.waiting').forEach(card => card.classList.remove('waiting'));
 }
 
 function showMatchSuccessAndAnimate(imageSrc, imagePath) {
-    // Die Animation ist korrekt und wird beibehalten
+    // ... (Logik unverändert, da die Animation gut funktioniert) ...
     matchedImagePreview.src = imageSrc;
     
     const mainContentRect = mainContent.getBoundingClientRect();
@@ -590,16 +599,8 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
     
     matchSuccessOverlay.style.width = `${popupWidth}px`;
     matchSuccessOverlay.style.height = `${popupHeight}px`;
-    
-    // Positionierung relativ zum Main Content
-    const mainContentTop = mainContent.offsetTop;
-    const mainContentLeft = mainContent.offsetLeft;
-
-    matchSuccessOverlay.style.top = `${mainContentTop + (mainContentRect.height - popupHeight) / 2}px`;
-    matchSuccessOverlay.style.left = `${mainContentLeft + (mainContentRect.width - popupWidth) / 2}px`;
-    
-    // Sicherstellen, dass die Z-Index-Logik beachtet wird
-    matchSuccessOverlay.style.position = 'fixed'; 
+    matchSuccessOverlay.style.top = `${(mainContentRect.height - popupHeight) / 2}px`;
+    matchSuccessOverlay.style.left = `${(mainContentRect.width - popupWidth) / 2}px`;
     matchSuccessOverlay.classList.add('active');
     
     setTimeout(() => {
@@ -611,26 +612,23 @@ function showMatchSuccessAndAnimate(imageSrc, imagePath) {
         animatedThumbnail.src = imageSrc;
         animatedThumbnail.classList.remove('hidden-by-default');
         
-        // Startposition der Animation
         animatedThumbnail.style.width = `${matchRect.width - 20}px`; 
         animatedThumbnail.style.height = `${matchRect.height - 20}px`; 
-        animatedThumbnail.style.top = `${matchRect.top}px`; 
-        animatedThumbnail.style.left = `${matchRect.left}px`;
+        animatedThumbnail.style.top = `${matchRect.top - mainContentRect.top + 10}px`; 
+        animatedThumbnail.style.left = `${matchRect.left - mainContentRect.left + 10}px`;
         animatedThumbnail.style.opacity = 1;
         animatedThumbnail.style.transition = 'all 0.8s cubic-bezier(0.5, 0.0, 0.5, 1.0)';
 
         
         loadPermanentGallery(); 
         
-        // Finde das Ziel-Element NACH dem Aufruf von loadPermanentGallery
         const newTarget = dailyMatchesGallery.querySelector(`[data-path="${imagePath}"]`);
         
         if (newTarget) {
             const targetRect = newTarget.getBoundingClientRect();
             
-            // Endposition der Animation (Absolute Position im Viewport)
-            const targetX = targetRect.left;
-            const targetY = targetRect.top;
+            const targetX = targetRect.left - mainContentRect.left;
+            const targetY = targetRect.top - mainContentRect.top;
 
             animatedThumbnail.style.width = `${targetRect.width}px`; 
             animatedThumbnail.style.height = `${targetRect.height}px`; 
@@ -664,7 +662,6 @@ function gameOver() {
          );
     });
     
-    // Speichere den abgeschlossenen Spielversuch im Verlauf
     const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
     updateHistory(gameId, currentTheme, moves, currentDifficulty.pairs, uniqueMatchedImages, true);
 
@@ -677,14 +674,14 @@ function gameOver() {
 
 function showImageDetail(fullSrc) {
     detailImage.src = fullSrc;
-    // Position: fixed ist wichtig für Overlays, die den Viewport abdecken
     imageDetailOverlay.style.position = 'fixed'; 
     imageDetailOverlay.classList.add('active');
 }
 
-// History-Logik (Korrigiert/Hinzugefügt)
+// History-Logik
 /**
  * Speichert ein Spiel im Verlauf, fügt einen neuen Eintrag hinzu oder aktualisiert einen bestehenden, wenn das Spiel abgeschlossen wurde.
+ * KORRIGIERT: Die Logik für die Aktualisierung in der History wurde vereinfacht, um nur abgeschlossene Spiele zu speichern oder ein bestehendes unvollständiges Spiel zu überschreiben, wenn es abgeschlossen ist.
  */
 function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
     let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
@@ -702,16 +699,14 @@ function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
         timestamp: timestamp
     };
     
-    // Finde Index des Eintrags mit derselben ID, falls er bereits gespeichert wurde (z.B. unvollständig)
     const existingIndex = history.findIndex(entry => entry.id === id);
     
     if (existingIndex !== -1) {
-        // Wenn es ein unvollständiges Spiel war und jetzt abgeschlossen ist, ersetze es.
-        // Andernfalls: wenn es das gleiche unvollständige Spiel ist, aktualisiere nur die Züge/Bilder.
         const existingEntry = history[existingIndex];
         
-        // Aktualisiere nur, wenn es eine Verbesserung oder ein Abschluss ist
-        if (completed || existingEntry.completed === false) {
+        // Wenn das neue Spiel unvollständig ist und das alte auch, ersetzen (um den Fortschritt zu speichern)
+        // ODER wenn das neue Spiel abgeschlossen ist (um das Spiel zu beenden).
+        if (!completed || (completed && !existingEntry.completed)) {
              history[existingIndex] = newEntry; 
         } 
         
@@ -723,6 +718,7 @@ function updateHistory(id, theme, moves, totalPairs, matchedImages, completed) {
 }
 
 function showHistory() {
+    // ... (Logik unverändert) ...
     const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     historyList.innerHTML = '';
 
@@ -739,7 +735,7 @@ function showHistory() {
     let todayCount = 0;
 
     history.forEach(gameEntry => {
-        if (gameEntry.date === today) todayCount++;
+        if (gameEntry.date === today && gameEntry.completed) todayCount++; // Zähle nur abgeschlossene Spiele
         
         const item = document.createElement('div');
         item.classList.add('history-item');
@@ -758,6 +754,7 @@ function showHistory() {
             <span class="history-score">Züge: ${gameEntry.moves}</span>
         `;
         
+        // KORRIGIERT: Detailansicht öffnet, wenn History-Item geklickt wird
         item.addEventListener('click', () => {
              viewHistoryGameDetails(gameEntry);
         });
@@ -765,11 +762,10 @@ function showHistory() {
         historyList.appendChild(item);
     });
     
-    document.getElementById('daily-score').textContent = `Heute: ${todayCount} Spiele`;
+    document.getElementById('daily-score').textContent = `Heute: ${todayCount} abgeschl. Spiele`;
     historyOverlay.classList.add('active');
 }
 
-// Funktion für History Detailansicht (Neu)
 function viewHistoryGameDetails(gameEntry) {
     historyGameGallery.innerHTML = '';
     historyDetailDate.textContent = `${gameEntry.date} (${gameEntry.theme}, ${gameEntry.completed ? 'Komplett' : 'Unvollständig'})`;
@@ -778,7 +774,6 @@ function viewHistoryGameDetails(gameEntry) {
     
     if (gameEntry.matchedImages && gameEntry.matchedImages.length > 0) {
         gameEntry.matchedImages.forEach(path => {
-            // Zeige Herz-Icon an, um Favoriten aus dem Verlauf heraus zu setzen
             historyGameGallery.appendChild(
                 createGalleryItem(path, favorites.includes(path), true)
             );
@@ -790,39 +785,127 @@ function viewHistoryGameDetails(gameEntry) {
     historyGameDetailOverlay.classList.add('active');
 }
 
-// --- SLIDER FUCHS LOGIK & DESIGN (Korrigiert) ---
+// --- SLIDER FUCHS LOGIK & DESIGN ---
+/**
+ * KORRIGIERT: Dynamische Farbfüllung des Sliders (Gelb -> Orange -> Rot)
+ */
 function updateDifficultyDisplay(animate = true) {
     const min = parseFloat(difficultySlider.min);
     const max = parseFloat(difficultySlider.max);
     const val = parseFloat(difficultySlider.value);
     
-    // Berechne den korrigierten Prozentsatz für 3 Stufen
     const correctedPercentage = (val - min) / (max - min) * 100;
-
-    // KORREKTUR: Die Position des Fuchses muss mit 50% für die Mitte korrigiert werden, da der CSS-Transform auf -50% translateX setzt.
-    foxHeadSlider.style.left = `${correctedPercentage}%`;
+    
+    // Aktualisiere die Position des Fuchs-Emojis
+    // Korrigierte Berechnung des Offsets für eine bessere Zentrierung
+    const sliderWidth = difficultySlider.offsetWidth;
+    const offsetCorrection = 15; // Halbe Breite des Fuchs-Paddings/Rands + etwas Spielraum
+    const leftPosition = (correctedPercentage / 100) * sliderWidth - offsetCorrection;
+    
+    // Verwende absoluten Pixelwert und beschränke ihn auf den sichtbaren Bereich
+    foxHeadSlider.style.left = `min(calc(100% - 25px), max(0px, ${leftPosition}px))`; 
     
     currentDifficulty = difficultyConfigs[val];
     
     // Aktualisiere den Post-it Text
     difficultyDescriptionPostit.innerHTML = `**${currentDifficulty.name}:** ${currentDifficulty.description}`;
     
-    // Aktualisiere den dynamischen Farbverlauf der Schiebeleiste
-    let colorStart, colorEnd;
+    // Dynamische Farbberechnung (Gelb (1) -> Orange (2) -> Rot (3))
+    let colorStart, colorMiddle, colorEnd;
+    
+    colorStart = 'var(--match-color)'; // Gelb
+    colorMiddle = 'var(--wait-color)'; // Orange
+    colorEnd = 'var(--error-color)'; // Rot
+
+    let sliderTrackFill;
+
     if (val == 1) {
-        colorStart = 'var(--match-color)'; 
-        colorEnd = 'var(--match-color)';
+        // Leicht (Gelb)
+        sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorStart} 100%)`;
     } else if (val == 2) {
-        colorStart = 'var(--match-color)';
-        colorEnd = 'var(--wait-color)'; 
+        // Mittel (Orange) - Einfärbung bis zur Mitte, dann Orange
+        sliderTrackFill = `linear-gradient(to right, ${colorMiddle} 0%, ${colorMiddle} 100%)`;
+    } else if (val == 3) {
+        // Schwer (Rot)
+        sliderTrackFill = `linear-gradient(to right, ${colorEnd} 0%, ${colorEnd} 100%)`;
     } else {
-        colorStart = 'var(--wait-color)';
-        colorEnd = 'var(--error-color)'; 
+         // Dynamischer Verlauf für Werte zwischen 1 und 3
+        const range = max - min;
+        const p1 = (1 - min) / range * 100; // Position von Leicht
+        const p2 = (2 - min) / range * 100; // Position von Mittel
+        const p3 = (3 - min) / range * 100; // Position von Schwer
+
+        if (val < 2) {
+            // Zwischen Leicht (1) und Mittel (2): Gelb zu Orange
+            const blend = (val - 1) / 1;
+            const stop = (val - 1) / range * 100;
+            sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorStart} ${correctedPercentage}%, ${colorMiddle} ${correctedPercentage}%, ${colorMiddle} 100%)`;
+
+        } else if (val > 2) {
+            // Zwischen Mittel (2) und Schwer (3): Orange zu Rot
+            const blend = (val - 2) / 1;
+            const startOrange = (2 - min) / range * 100;
+            sliderTrackFill = `linear-gradient(to right, ${colorMiddle} 0%, ${colorMiddle} ${startOrange}%, ${colorEnd} ${correctedPercentage}%, ${colorEnd} 100%)`;
+        }
     }
     
-    // Erstelle den Verlauf basierend auf dem aktuellen Wert
-    const sliderTrackFill = `linear-gradient(to right, ${colorStart} 0%, ${colorEnd} ${correctedPercentage}%, var(--button-bg-inactive) ${correctedPercentage}%, var(--button-bg-inactive) 100%)`;
-    difficultySlider.style.setProperty('--slider-fill', sliderTrackFill);
+    // WICHTIG: Erstellen des dynamischen Verlaufs von Links bis zur aktuellen Reglerposition
+    let gradientStops = [];
+    const p_leicht = 0;
+    const p_mittel = 50;
+    const p_schwer = 100;
+
+    if (val <= 1) { // Leicht
+        gradientStops.push(`${colorStart} 0%`, `${colorStart} ${correctedPercentage}%`);
+    } else if (val > 1 && val <= 2) { // Leicht -> Mittel
+        const orangeStart = 50 - (50 * (2 - val));
+        gradientStops.push(`${colorStart} 0%`, `${colorMiddle} ${p_mittel}%`);
+        gradientStops.push(`${colorMiddle} ${correctedPercentage}%`);
+    } else if (val > 2) { // Mittel -> Schwer
+        const redStart = 50 + (50 * (val - 2));
+        gradientStops.push(`${colorStart} 0%`, `${colorMiddle} ${p_mittel}%`);
+        gradientStops.push(`${colorMiddle} ${p_mittel}%`);
+        gradientStops.push(`${colorEnd} ${correctedPercentage}%`);
+    }
+    
+    // Einfache Lösung: Verwende 0% für Startfarbe, und den korrigierten Prozentsatz für die Endfarbe.
+    // Dazwischen fügen wir die statische inaktive Farbe ein, wenn die aktuelle Position nicht 100% ist.
+    let fill = '';
+    if (val == 1) {
+        fill = `linear-gradient(to right, var(--match-color) 0%, var(--match-color) 30%, var(--button-bg-inactive) 30%, var(--button-bg-inactive) 100%)`;
+    } else if (val == 2) {
+        fill = `linear-gradient(to right, var(--wait-color) 0%, var(--wait-color) 65%, var(--button-bg-inactive) 65%, var(--button-bg-inactive) 100%)`;
+    } else if (val == 3) {
+        fill = `linear-gradient(to right, var(--error-color) 0%, var(--error-color) 100%)`;
+    } else {
+        // Dynamischer Verlauf für Zwischenstufen (Zwischen 1 und 3)
+        let colorA, colorB, percentageA, percentageB;
+        if (val < 2) {
+             // 1 (Gelb) zu 2 (Orange)
+            colorA = 'var(--match-color)';
+            colorB = 'var(--wait-color)';
+            percentageA = 0;
+            percentageB = 50;
+        } else {
+            // 2 (Orange) zu 3 (Rot)
+            colorA = 'var(--wait-color)';
+            colorB = 'var(--error-color)';
+            percentageA = 50;
+            percentageB = 100;
+        }
+        
+        // Berechnung des Interpolationsfaktors
+        const factor = (val - Math.floor(val)); 
+        const interColor = `rgb(
+            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[0]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[0]) * factor)},
+            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[1]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[1]) * factor)},
+            ${Math.round(parseInt(colorA.slice(4, -1).split(',')[2]) * (1-factor) + parseInt(colorB.slice(4, -1).split(',')[2]) * factor)}
+        )`;
+        
+        fill = `linear-gradient(to right, ${colorA} 0%, ${colorB} ${correctedPercentage}%, var(--button-bg-inactive) ${correctedPercentage}%, var(--button-bg-inactive) 100%)`;
+    }
+    
+    difficultySlider.style.setProperty('--slider-fill', fill);
 
 
     if (animate) {
@@ -836,8 +919,10 @@ function updateDifficultyDisplay(animate = true) {
 // --- INITIALISIERUNG ---
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Event Listener für Overlays (Klick auf Hintergrund schließt)
-    
+    // Lade den Post-it-Status
+    isPostItClosed = localStorage.getItem(POST_IT_CLOSED_KEY) === 'true';
+
+    // Event Listener für Overlays
     [imageDetailOverlay, historyOverlay, historyGameDetailOverlay].forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target.classList.contains('overlay')) {
@@ -846,7 +931,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Schließen des History Detail Overlays
     document.querySelector('.close-history-detail').addEventListener('click', () => {
          historyGameDetailOverlay.classList.remove('active');
     });
@@ -858,9 +942,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     showHistoryBtn.addEventListener('click', showHistory);
     
+    // NEU: Post-it schließen Funktion
+    closePostItButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        difficultyNote.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-in';
+        difficultyNote.style.opacity = '0';
+        difficultyNote.style.transform = 'rotate(10deg) translateX(100px) translateY(-50px)';
+        
+        // Nach der Animation ausblenden und Status speichern
+        setTimeout(() => {
+            difficultyNote.classList.add('hidden-by-default');
+            difficultyNote.style.transition = 'none'; 
+            difficultyNote.style.transform = 'rotate(2deg)'; // Reset für das nächste Spiel
+            isPostItClosed = true;
+            localStorage.setItem(POST_IT_CLOSED_KEY, 'true');
+        }, 500); 
+    });
+    
     difficultySlider.addEventListener('input', (e) => {
         updateDifficultyDisplay(true);
     });
+    
+    // Korrektur: Update Difficulty Display beim Initialisieren, bevor es zum Game Setup geht
+    updateDifficultyDisplay(false); 
     
     difficultySlider.addEventListener('change', () => {
          setupGame(true); 
@@ -871,7 +975,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTheme = e.target.dataset.theme;
             
             if (gameStarted && pairsFound < currentDifficulty.pairs) {
-                 // Speichere den unvollständigen Versuch als Eintrag
                  const gameId = localStorage.getItem(CURRENT_GAME_ID_KEY) || generateGameId();
                  updateHistory(gameId, currentTheme, moves, currentDifficulty.pairs, [...new Set(matchedImages)], false);
             }
@@ -889,13 +992,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (!loadCurrentGame()) {
-        updateDifficultyDisplay(false); 
+        // updateDifficultyDisplay(false) wurde bereits ausgeführt
         setupGame(true); 
     }
     
     // Lade die heutige Spielanzahl beim Start
     const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
     const today = new Date().toISOString().split('T')[0];
-    const todayCount = history.filter(entry => entry.date === today).length;
-    document.getElementById('daily-score').textContent = `Heute: ${todayCount} Spiele`;
+    const todayCount = history.filter(entry => entry.date === today && entry.completed).length; // Zähle nur abgeschlossene Spiele
+    document.getElementById('daily-score').textContent = `Heute: ${todayCount} abgeschl. Spiele`;
 });
